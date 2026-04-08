@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+########################################
+# Code fournie par Pr. Pierre Pesneau  #
+########################################
+
 def readData(datafilePath):
     with open(datafilePath, "r") as file: 
         line = file.readline()
