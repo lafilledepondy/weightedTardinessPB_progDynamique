@@ -5,7 +5,7 @@ def main():
 
     print("P1:")
     
-    print(basic_subgradient([0,0],[],0.01))
+    print(basic_subgradient([3,1], 0, 0.000001))
 
 
 if __name__ == "__main__":

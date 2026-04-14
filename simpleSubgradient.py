@@ -202,7 +202,7 @@ def basic_subgradient(initial_pi, initial_mu, min_step_size):
     pi = initial_pi
     mu = initial_mu
 
-    step_size = 1.0  # initial step
+    step_size = 2.0  # initial step
 
     best_value = -math.inf
     best_x = None
