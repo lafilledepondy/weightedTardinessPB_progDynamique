@@ -171,29 +171,33 @@ def compute_subgradient(x):
 # onto the non-negative orthant (returns the vector of multipliers with 
 # negative components set to zero).
 def project_solution(pi):
-    tab = []
-    for i in range(len(pi)):
-        if pi[i] < 0:
-            tab.append(0)
-        else:
-            tab.append(pi[i])
-    return tab
-
+    # numpy array much faster than list comprehension
+    if isinstance(pi, np.ndarray):
+        return np.maximum(pi, 0)
+    
+    # compherension list slow
+    return [max(x, 0) for x in pi]
 
 # Returns the new step size
 def update_step_size(step_size):
+    # choix arbitraire 0.8 ; should be decreasing and not too fast
     return 0.8 * step_size
 
-def polyak_step_size(beta_k, target_value, current_value, subgradient):
+def update_polyak_step_size(beta_k, L_star, L_k, d_k):
     """
     Polyak's ruke s_k = beta_k * (L_star - L_k) / ||d_k||**2
+    L_star: primal bound
+    L_k: dual value at iteration k
+    d_k: subgradient at iteration k
+    beta_k: parameter in (0,1)
+    s_k: step size at iteration k
     """
-    norm_squared = LA.norm(subgradient) ** 2
+    norm_squared = LA.norm(d_k) ** 2
     
     if norm_squared == 0:
-        return 0.0
+        return 0.0 # */0 = 0 to avoid complication 
     
-    return beta_k * (target_value - current_value) / norm_squared
+    return beta_k * (L_star - L_k) / norm_squared
 
 ##############################################
 #          Basic subgradient procedure       #
@@ -204,16 +208,18 @@ def basic_subgradient(initial_pi, initial_mu, min_step_size):
 
     step_size = 2.0  # initial step
 
-    best_value = -math.inf
+    best_Dualvalue = -math.inf
     best_x = None
+
+    history = []
 
     while step_size > min_step_size:
         # solve Lagrangian subproblem
         dual_value, x = compute_dual_function(pi, mu)
 
         # keep best
-        if dual_value > best_value:
-            best_value = dual_value
+        if dual_value > best_Dualvalue:
+            best_Dualvalue = dual_value
             best_x = x
 
         # subgradient
@@ -223,24 +229,65 @@ def basic_subgradient(initial_pi, initial_mu, min_step_size):
         pi = pi + step_size * sg_pi 
         mu = mu + step_size * sg_mu
 
-        # projection pi ≥ 0
-        pi = np.array(project_solution(pi))
+        # projection pi >= 0
+        pi = project_solution(pi) # returns compherension list
 
         # update step
         step_size = update_step_size(step_size)
 
-    return round(best_value, 2), best_x
+    return round(best_Dualvalue, 2), best_x
+
+##############################################################
+#          Subgradient with Polyak step size procedure       #
+##############################################################
+def subgradientPolyak(initial_pi, initial_mu, min_step_size):
+    pi = initial_pi
+    mu = initial_mu
+
+    step_size = 2.0  # initial step
+    beta_k = 1.0 
+    # if beta_k is constant then the method is not guaranteed to converge TAKES to LONG
+    # beta_k will be updated down
+
+    L_star = compute_objective_function(feasible_x_sol()) # primal bound
+
+    best_Dualvalue = -math.inf
+    best_x = None
+
+    while step_size > min_step_size:
+        # solve Lagrangian subproblem
+        dual_value, x = compute_dual_function(pi, mu)
+
+        # keep best
+        if dual_value > best_Dualvalue:
+            best_Dualvalue = dual_value
+            best_x = x
+
+        # subgradient
+        sg_pi, sg_mu = compute_subgradient(x)
+
+        # update
+        pi = pi + step_size * sg_pi 
+        mu = mu + step_size * sg_mu
+
+        # projection pi >= 0
+        pi = np.array(project_solution(pi))
+
+        # update step
+        step_size = update_polyak_step_size(beta_k, L_star, dual_value, np.concatenate([sg_pi, sg_mu]))
+
+    return round(best_Dualvalue, 2), best_x
 
 
 ##############################################
 #     Deflected subgradient procedure: ADS   #
 ##############################################
-def compute_direction_ADS(sg_pi,sg_mu,direction_pi,direction_mu):
+def compute_direction_ADS(sg_pi, sg_mu, direction_pi, direction_mu):
     # complete the code
     pass
 
 
-def subgradient_ADS(initial_pi,initial_mu,min_step_size):
+def subgradient_ADS(initial_pi, initial_mu, min_step_size):
     # complete the code
     pass
 
@@ -249,7 +296,7 @@ def subgradient_ADS(initial_pi,initial_mu,min_step_size):
 ##############################################
 #                Cutting planes              #
 ##############################################
-def initialize_master_program(nb_ineq_ctrs,nb_eq_ctrs,initial_x_sol):
+def initialize_master_program(nb_ineq_ctrs, nb_eq_ctrs, initial_x_sol):
     # complete the code
     pass
 
