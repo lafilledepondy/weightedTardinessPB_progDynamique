@@ -211,7 +211,7 @@ def basic_subgradient(initial_pi, initial_mu, min_step_size):
     best_Dualvalue = -math.inf
     best_x = None
 
-    history = []
+    history = [] # to track
 
     while step_size > min_step_size:
         # solve Lagrangian subproblem
@@ -235,7 +235,10 @@ def basic_subgradient(initial_pi, initial_mu, min_step_size):
         # update step
         step_size = update_step_size(step_size)
 
-    return round(best_Dualvalue, 2), best_x
+        # update the history
+        history.append((dual_value, np.copy(pi), np.copy(mu)))
+
+    return round(best_Dualvalue, 2), best_x, history
 
 ##############################################################
 #          Subgradient with Polyak step size procedure       #
@@ -253,6 +256,8 @@ def subgradientPolyak(initial_pi, initial_mu, min_step_size):
 
     best_Dualvalue = -math.inf
     best_x = None
+
+    history = [] # to track
 
     while step_size > min_step_size:
         # solve Lagrangian subproblem
@@ -274,9 +279,21 @@ def subgradientPolyak(initial_pi, initial_mu, min_step_size):
         pi = np.array(project_solution(pi))
 
         # update step
-        step_size = update_polyak_step_size(beta_k, L_star, dual_value, np.concatenate([sg_pi, sg_mu]))
+        d_k = np.concatenate([sg_pi, sg_mu])
+        step_size = update_polyak_step_size(beta_k, L_star, dual_value, d_k)
 
-    return round(best_Dualvalue, 2), best_x
+        # update beta_k
+        beta_k = update_step_size(beta_k) 
+        # TODO: update beta_k differently ?
+        # 1. beta_k = 1/(k+1)
+        # 2. beta_k = 0.8 * beta_k (currectly implemented)
+        # 3. beta_k = beta_k*1.05 if good iter else beta_k*0.7 
+        # 4. beta_k = beta_k if good iter else beta_k*0.7 
+
+        # update the history
+        history.append((dual_value, np.copy(pi), np.copy(mu)))
+
+    return round(best_Dualvalue, 2), best_x, history
 
 
 ##############################################
