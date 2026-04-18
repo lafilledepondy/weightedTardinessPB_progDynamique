@@ -1,6 +1,6 @@
 import math
 import numpy as np
-import numpy.typing as npt
+import numpy.typing as npt # searched on internet for type specification of numpy array[float] to avoid confusion with int or even list
 from numpy import linalg as LA
 
 
@@ -283,11 +283,11 @@ def subgradient_Polyak(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDAr
         # projection pi >= 0
         pi = np.array(project_solution(pi))
 
-        # update step
+        # update step (basic method)
         d_k = np.concatenate([sg_pi, sg_mu])
         step_size = update_polyak_step_size(beta_k, L_star, dual_value, d_k)
 
-        # update beta_k
+        # update beta_k (Polyak's rule)
         beta_k = update_step_size(beta_k) 
         # TODO: update beta_k differently ?
         # 1. beta_k = 1/(k+1)
@@ -351,7 +351,6 @@ def compute_direction_ADS(sg_pi, sg_mu, direction_pi, direction_mu):
 
 
 def subgradient_ADS(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float):
-    # TODO
     pi = initial_pi
     mu = initial_mu 
 
