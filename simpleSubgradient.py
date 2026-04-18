@@ -1,7 +1,8 @@
-import numpy as np
-import numpy
 import math
+import numpy as np
+import numpy.typing as npt
 from numpy import linalg as LA
+
 
 # #########################################################################
 # Uncomment the part of code that defines the problem you want to solve. #
@@ -31,11 +32,11 @@ def compute_objective_function(x):
 
 # returns the value of the functions defining the inequality constraints at x
 def compute_ineq_ctrs_functions(x):
-    return numpy.array([ -x[0]-x[1] + 2, x[1] -1  ])
+    return np.array([ -x[0]-x[1] + 2, x[1] -1  ])
 
 # returns the value of the functions defining the equality constraints at x
 def compute_eq_ctrs_functions(x):
-    return numpy.array([])
+    return np.array([])
 
 # compute the value of the dual function for given multipliers 
 # pi (for inequality constraints) and mu (for equality constraints)
@@ -43,7 +44,7 @@ def compute_eq_ctrs_functions(x):
 def compute_dual_function(pi,mu):
     lagrange_costs = [1-pi[0],-4-pi[0]+pi[1]]
     optimal_sol = [(3 if v<0 else 0) for v in lagrange_costs]
-    return numpy.dot(optimal_sol,lagrange_costs) + numpy.dot([2,-1],pi), optimal_sol
+    return np.dot(optimal_sol,lagrange_costs) + np.dot([2,-1],pi), optimal_sol
 
 # returns an arbitrary feasible solution
 def feasible_x_sol():
@@ -67,11 +68,11 @@ def feasible_x_sol():
 
 # # returns the value of the functions defining the inequality constraints at x
 # def compute_ineq_ctrs_functions(x):
-#     return numpy.array([ x[0]-3.5*x[1]-1 ])
+#     return np.array([ x[0]-3.5*x[1]-1 ])
 
 # # returns the value of the functions defining the equality constraints at x
 # def compute_eq_ctrs_functions(x):
-#     return numpy.array([])
+#     return np.array([])
 
 # # compute the value of the dual function for given multipliers 
 # # pi (for inequality constraints) and mu (for equality constraints)
@@ -171,7 +172,7 @@ def compute_subgradient(x):
 # onto the non-negative orthant (returns the vector of multipliers with 
 # negative components set to zero).
 def project_solution(pi):
-    # numpy array much faster than list comprehension
+    # np array much faster than list comprehension
     if isinstance(pi, np.ndarray):
         return np.maximum(pi, 0)
     
@@ -183,28 +184,13 @@ def update_step_size(step_size):
     # choix arbitraire 0.8 ; should be decreasing and not too fast
     return 0.8 * step_size
 
-def update_polyak_step_size(beta_k, L_star, L_k, d_k):
-    """
-    Polyak's ruke s_k = beta_k * (L_star - L_k) / ||d_k||**2
-    L_star: primal bound
-    L_k: dual value at iteration k
-    d_k: subgradient at iteration k
-    beta_k: parameter in (0,1)
-    s_k: step size at iteration k
-    """
-    norm_squared = LA.norm(d_k) ** 2
-    
-    if norm_squared == 0:
-        return 0.0 # */0 = 0 to avoid complication 
-    
-    return beta_k * (L_star - L_k) / norm_squared
 
 ##############################################
 #          Basic subgradient procedure       #
 ##############################################
-def basic_subgradient(initial_pi, initial_mu, min_step_size):
+def subgradient_basic(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float):
     pi = initial_pi
-    mu = initial_mu
+    mu = initial_mu # TODO: update mu in the algo
 
     step_size = 2.0  # initial step
 
@@ -225,7 +211,7 @@ def basic_subgradient(initial_pi, initial_mu, min_step_size):
         # subgradient
         sg_pi, sg_mu = compute_subgradient(x)
 
-        # update
+        # update multipliers
         pi = pi + step_size * sg_pi 
         mu = mu + step_size * sg_mu
 
@@ -236,16 +222,35 @@ def basic_subgradient(initial_pi, initial_mu, min_step_size):
         step_size = update_step_size(step_size)
 
         # update the history
-        history.append((dual_value, np.copy(pi), np.copy(mu)))
-
+        history.append({
+            "dual_value": dual_value,
+            "pi": np.copy(pi),
+            "mu": np.copy(mu)
+        })
     return round(best_Dualvalue, 2), best_x, history
 
 ##############################################################
 #          Subgradient with Polyak step size procedure       #
 ##############################################################
-def subgradientPolyak(initial_pi, initial_mu, min_step_size):
+def update_polyak_step_size(beta_k, L_star, L_k, d_k):
+    """
+    Polyak's ruke s_k = beta_k * (L_star - L_k) / ||d_k||**2
+    L_star: primal bound
+    L_k: dual value at iteration k
+    d_k: subgradient at iteration k
+    beta_k: parameter in (0,1)
+    s_k: step size at iteration k
+    """
+    norm_squared = LA.norm(d_k) ** 2
+    
+    if norm_squared == 0:
+        return 0.0 # */0 = 0 to avoid complication 
+    
+    return beta_k * (L_star - L_k) / norm_squared
+
+def subgradient_Polyak(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float):
     pi = initial_pi
-    mu = initial_mu
+    mu = initial_mu # TODO: update mu in the algo
 
     step_size = 2.0  # initial step
     beta_k = 1.0 
@@ -271,7 +276,7 @@ def subgradientPolyak(initial_pi, initial_mu, min_step_size):
         # subgradient
         sg_pi, sg_mu = compute_subgradient(x)
 
-        # update
+        # update multipliers
         pi = pi + step_size * sg_pi 
         mu = mu + step_size * sg_mu
 
@@ -291,8 +296,11 @@ def subgradientPolyak(initial_pi, initial_mu, min_step_size):
         # 4. beta_k = beta_k if good iter else beta_k*0.7 
 
         # update the history
-        history.append((dual_value, np.copy(pi), np.copy(mu)))
-
+        history.append({
+            "dual_value": dual_value,
+            "pi": np.copy(pi),
+            "mu": np.copy(mu)
+        })
     return round(best_Dualvalue, 2), best_x, history
 
 
@@ -300,13 +308,102 @@ def subgradientPolyak(initial_pi, initial_mu, min_step_size):
 #     Deflected subgradient procedure: ADS   #
 ##############################################
 def compute_direction_ADS(sg_pi, sg_mu, direction_pi, direction_mu):
-    # complete the code
-    pass
+    """
+    ADS = Average Direction Strategy
+        = d^k = g^k + psi * d^(k-1)
+    where: psi = ||g^k|| / ||d^(k-1)||
+
+    if 
+        - first iteration => no previous direction (case 1)
+        - previous direction = 0 norm  (case 2)
+    then d^k = g^k
+    """    
+
+    # pi update
+    norm_prev_pi = np.linalg.norm(direction_pi)
+    norm_sg_pi = np.linalg.norm(sg_pi)
+
+    if norm_prev_pi == 0:
+        new_direction_pi = np.copy(sg_pi) # case 1 & case 2 ; case 1 => bcse since direction_pi is initialized to 0 so the norm will become 0
+    else:
+        psi_pi = norm_sg_pi / norm_prev_pi
+        new_direction_pi = sg_pi + psi_pi * direction_pi
+
+        # avoid null direction TODO: is it possible? and necessary?
+        if np.linalg.norm(new_direction_pi) == 0:
+            new_direction_pi = np.copy(sg_pi)
+
+    # mu update 
+    # (same logic as pi update) # TODO: is it correct? 
+    norm_prev_mu = np.linalg.norm(direction_mu)
+    norm_sg_mu = np.linalg.norm(sg_mu)
+
+    if norm_prev_mu == 0:
+        new_direction_mu = np.copy(sg_mu)
+    else:
+        psi_mu = norm_sg_mu / norm_prev_mu
+        new_direction_mu = sg_mu + psi_mu * direction_mu
+
+        if np.linalg.norm(new_direction_mu) == 0:
+            new_direction_mu = np.copy(sg_mu)
+
+    return new_direction_pi, new_direction_mu
 
 
-def subgradient_ADS(initial_pi, initial_mu, min_step_size):
-    # complete the code
-    pass
+def subgradient_ADS(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float):
+    # TODO
+    pi = initial_pi
+    mu = initial_mu 
+
+    # previous directions 
+    direction_pi = np.zeros_like(pi) # intialized to 0 it's why in the compute_direction_ADS for the case 1 we permit to use norm=0
+    direction_mu = np.zeros_like(mu)
+
+    step_size = 2.0
+
+    best_Dualvalue = -math.inf
+    best_x = None
+
+    history = []
+
+    while step_size > min_step_size:
+        # solve Lagrangian subproblem
+        dual_value, x = compute_dual_function(pi, mu)
+
+        # keep best
+        if dual_value > best_Dualvalue:
+            best_Dualvalue = dual_value
+            best_x = x
+
+        # subgradient
+        sg_pi, sg_mu = compute_subgradient(x)
+
+        # ADS direction
+        direction_pi, direction_mu = compute_direction_ADS(
+            sg_pi, sg_mu, direction_pi, direction_mu
+        )
+
+        # update multipliers
+        pi = pi + step_size * sg_pi 
+        mu = mu + step_size * sg_mu
+
+        # projection pi >= 0
+        pi = np.array(project_solution(pi), dtype=float) # returns compherension list then converted to npArray
+
+        # update step
+        step_size = update_step_size(step_size)
+
+        # update the history
+        # we save all for reuse
+        history.append({
+            "dual_value": dual_value,
+            "best_dual": best_Dualvalue,
+            "step": step_size,
+            "pi": np.copy(pi),
+            "mu": np.copy(mu)
+        })
+        
+    return round(best_Dualvalue, 2), best_x, history
 
 
 
@@ -314,9 +411,9 @@ def subgradient_ADS(initial_pi, initial_mu, min_step_size):
 #                Cutting planes              #
 ##############################################
 def initialize_master_program(nb_ineq_ctrs, nb_eq_ctrs, initial_x_sol):
-    # complete the code
+    # TODO: complete the code
     pass
 
 def cutting_planes(epsilon):
-    # complete the code
+    # TODO: complete the code
     pass
