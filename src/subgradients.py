@@ -48,7 +48,7 @@ def update_step_size(step_size):
 def subgradient_basic(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float, problem_name: str ):
     set_active_problem(problem_name)
     pi = initial_pi
-    mu = initial_mu # TODO: update mu in the algo
+    mu = initial_mu 
 
     step_size = 2.0  # initial step
 
@@ -109,7 +109,7 @@ def update_polyak_step_size(beta_k, L_star, L_k, d_k):
 def subgradient_Polyak(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float, problem_name: str):
     set_active_problem(problem_name)
     pi = initial_pi
-    mu = initial_mu # TODO: update mu in the algo
+    mu = initial_mu 
 
     step_size = 2.0  # initial step
     beta_k = 1.0 
@@ -148,9 +148,7 @@ def subgradient_Polyak(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDAr
 
         # update beta_k (Polyak's rule)
         beta_k = update_step_size(beta_k) 
-        # TODO: update beta_k differently ?
-        # beta_k = 0.8 * beta_k (currectly implemented) OK
-
+        
         # update the history
         history.append({
             "dual_value": dual_value,
@@ -185,12 +183,12 @@ def compute_direction_ADS(sg_pi, sg_mu, direction_pi, direction_mu):
         psi_pi = norm_sg_pi / norm_prev_pi
         new_direction_pi = sg_pi + psi_pi * direction_pi
 
-        # avoid null direction TODO: is it possible? and necessary?
+        # avoid null direction 
         if np.linalg.norm(new_direction_pi) == 0:
             new_direction_pi = np.copy(sg_pi)
 
     # mu update 
-    # (same logic as pi update) # TODO: is it correct? 
+    # (same logic as pi update) 
     norm_prev_mu = np.linalg.norm(direction_mu)
     norm_sg_mu = np.linalg.norm(sg_mu)
 
