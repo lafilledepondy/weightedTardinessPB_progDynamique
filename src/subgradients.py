@@ -2,157 +2,14 @@ import math
 import numpy as np
 import numpy.typing as npt # searched on internet for type specification of numpy array[float] to avoid confusion with int or even list
 from numpy import linalg as LA
-
-
-# #########################################################################
-# Uncomment the part of code that defines the problem you want to solve. #
-# Note: an object-oriented programming approach seems more appropriate,  #
-# but might slightly more complicated to implement. Feel free to choose  #
-# your preferred approach.                                               #
-# In the following, the dual variables associated with <= constraints    #
-# are named pi.                                                          #   
-# To implement the Lagrangian relaxations of the weighted tardiness      #
-# scheduling problem, it is recommended to modify the prototypes of the  #
-# functions to include an "instance" object to the parameters.           #
-# #########################################################################
-
-
-# ##############################################
-# # Functions defining mathematical program P1 #
-# ##############################################
-
-# number of elements of the mathematical program
-# returns nb_variables, nb_ineq_ctrs, nb_eq_ctrs
-def math_prog_dims():
-    return 2,2,0 # 2 varibales, 2 fct g and 0 fct h
-
-# returns the value of the objective function at x
-def compute_objective_function(x):
-    return x[0]-4*x[1]
-
-# returns the value of the functions defining the inequality constraints at x
-def compute_ineq_ctrs_functions(x):
-    return np.array([ -x[0]-x[1] + 2, x[1] -1  ])
-
-# returns the value of the functions defining the equality constraints at x
-def compute_eq_ctrs_functions(x):
-    return np.array([])
-
-# compute the value of the dual function for given multipliers 
-# pi (for inequality constraints) and mu (for equality constraints)
-# returns the value, and an optimal solution of the Lagrange subproblem
-def compute_dual_function(pi,mu):
-    lagrange_costs = [1-pi[0],-4-pi[0]+pi[1]]
-    optimal_sol = [(3 if v<0 else 0) for v in lagrange_costs]
-    return np.dot(optimal_sol,lagrange_costs) + np.dot([2,-1],pi), optimal_sol
-
-# returns an arbitrary feasible solution
-def feasible_x_sol():
-    return [3,1]
-##################################
-# End of mathematical program P1 #
-##################################
-
-# ##############################################
-# # Functions defining mathematical program P2 #
-# ##############################################
-
-# number of elements of the mathematical program
-# returns nb_variables, nb_ineq_ctrs, nb_eq_ctrs
-# def math_prog_dims():
-#     return 2,1,0
-
-# # returns the value of the objective function at x
-# def compute_objective_function(x):
-#     return (x[0]-2)*(x[0]-2)+0.25*x[1]*x[1]
-
-# # returns the value of the functions defining the inequality constraints at x
-# def compute_ineq_ctrs_functions(x):
-#     return np.array([ x[0]-3.5*x[1]-1 ])
-
-# # returns the value of the functions defining the equality constraints at x
-# def compute_eq_ctrs_functions(x):
-#     return np.array([])
-
-# # compute the value of the dual function for given multipliers 
-# # pi (for inequality constraints) and mu (for equality constraints)
-# # returns the value, and an optimal solution of the Lagrange subproblem
-# def compute_dual_function(pi,mu):
-#     optimal_sol=[2-1.5*pi[0],pi[0]]
-#     return -2.5*pi[0]*pi[0]+pi[0], optimal_sol
-
-# # returns an arbitrary feasible solution
-# def feasible_x_sol():
-#     return [0,4/3]
-##################################
-# End of mathematical program P2 #
-##################################
-
-###################################################################################
-# Functions required for the weighted tardiness single machine scheduling problem #
-###################################################################################
-class SchedulingInstance:
-    """
-    Represents a single-machine scheduling instance with weighted tardiness data.
-    Attributes:
-        nb_jobs (int): Number of jobs in the instance.
-        processing_times (list[int]): Processing time for each job.
-        weights (list[int]): Penalty weight for each job.
-        due_dates (list[int]): Due date for each job.
-        horizon (int): Total processing time of all jobs (planning horizon).
-    Methods:
-        from_file(file_path):
-            Build and return a SchedulingInstance from a text file.
-            Expected file format:
-                - First non-empty line: number of jobs (integer).
-                - Next non-empty lines: one job per line with
-                  "processing_time due_date weight".
-            Raises:
-                ValueError: If the file is empty, malformed, or job count is inconsistent.
-    """
-    def __init__(self, nb_jobs, processing_times, weights, due_dates):
-        self.nb_jobs=nb_jobs
-        self.processing_times=processing_times
-        self.weights=weights
-        self.due_dates=due_dates
-        self.horizon=sum(processing_times)
-    
-    # read from file
-    @staticmethod
-    def from_file(file_path):
-        with open(file_path) as f:
-            first_line = f.readline().strip()
-            if first_line == "":
-                raise ValueError("Input file is empty.")
-            nb_jobs=int(first_line)
-            # in each line, the first number is the processing time, the second number is the due date, the third number is the weight
-            processing_times=[0]*nb_jobs
-            weights=[0]*nb_jobs
-            due_dates = [0]*nb_jobs
-            job_idx = 0
-            for line in f:
-                stripped = line.strip()
-                if stripped == "":
-                    continue
-                values = stripped.split()
-                if len(values) < 3:
-                    raise ValueError(f"Invalid job line: '{stripped}'. Expected 3 values.")
-                if job_idx >= nb_jobs:
-                    raise ValueError("File contains more jobs than declared in the first line.")
-                processing_times[job_idx] = int(values[0])
-                due_dates[job_idx] = int(values[1])
-                weights[job_idx] = int(values[2])
-                job_idx += 1
-
-            if job_idx != nb_jobs:
-                raise ValueError(
-                    f"File contains {job_idx} jobs but first line declares {nb_jobs}."
-                )
-
-            return SchedulingInstance(nb_jobs, processing_times, weights, due_dates)
-
-
-
+from problems import (
+    set_active_problem,
+    compute_ineq_ctrs_functions,
+    compute_eq_ctrs_functions,
+    compute_dual_function,
+    compute_objective_function,
+    feasible_x_sol,
+)
 
 ##############################################
 #  Code used by several methods              #
@@ -188,7 +45,8 @@ def update_step_size(step_size):
 ##############################################
 #          Basic subgradient procedure       #
 ##############################################
-def subgradient_basic(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float):
+def subgradient_basic(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float, problem_name: str ):
+    set_active_problem(problem_name)
     pi = initial_pi
     mu = initial_mu # TODO: update mu in the algo
 
@@ -248,7 +106,8 @@ def update_polyak_step_size(beta_k, L_star, L_k, d_k):
     
     return beta_k * (L_star - L_k) / norm_squared
 
-def subgradient_Polyak(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float):
+def subgradient_Polyak(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float, problem_name: str):
+    set_active_problem(problem_name)
     pi = initial_pi
     mu = initial_mu # TODO: update mu in the algo
 
@@ -290,10 +149,7 @@ def subgradient_Polyak(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDAr
         # update beta_k (Polyak's rule)
         beta_k = update_step_size(beta_k) 
         # TODO: update beta_k differently ?
-        # 1. beta_k = 1/(k+1)
-        # 2. beta_k = 0.8 * beta_k (currectly implemented)
-        # 3. beta_k = beta_k*1.05 if good iter else beta_k*0.7 
-        # 4. beta_k = beta_k if good iter else beta_k*0.7 
+        # beta_k = 0.8 * beta_k (currectly implemented) OK
 
         # update the history
         history.append({
@@ -350,7 +206,8 @@ def compute_direction_ADS(sg_pi, sg_mu, direction_pi, direction_mu):
     return new_direction_pi, new_direction_mu
 
 
-def subgradient_ADS(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float):
+def subgradient_ADS(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float, problem_name: str):
+    set_active_problem(problem_name)
     pi = initial_pi
     mu = initial_mu 
 
@@ -404,15 +261,3 @@ def subgradient_ADS(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray
         
     return round(best_Dualvalue, 2), best_x, history
 
-
-
-##############################################
-#                Cutting planes              #
-##############################################
-def initialize_master_program(nb_ineq_ctrs, nb_eq_ctrs, initial_x_sol):
-    # TODO: complete the code
-    pass
-
-def cutting_planes(epsilon):
-    # TODO: complete the code
-    pass

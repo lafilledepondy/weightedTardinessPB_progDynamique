@@ -2,7 +2,7 @@ import pytest
 
 from readData import *
 from progDyn import *
-from main import optimalOrRealisableOrInfesable
+from src.main import optimalOrRealisableOrInfesable
 
 # ====== Relax. Lin. 1 
 def test_RL1_Toy_wt4_1_dat():

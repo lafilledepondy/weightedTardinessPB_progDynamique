@@ -1,0 +1,415 @@
+# import math
+import numpy as np
+# import numpy.typing as npt # searched on internet for type specification of numpy array[float] to avoid confusion with int or even list
+# from numpy import linalg as LA
+
+
+# #########################################################################
+# Uncomment the part of code that defines the problem you want to solve. #
+# Note: an object-oriented programming approach seems more appropriate,  #
+# but might slightly more complicated to implement. Feel free to choose  #
+# your preferred approach.                                               #
+# In the following, the dual variables associated with <= constraints    #
+# are named pi.                                                          #   
+# To implement the Lagrangian relaxations of the weighted tardiness      #
+# scheduling problem, it is recommended to modify the prototypes of the  #
+# functions to include an "instance" object to the parameters.           #
+# #########################################################################
+
+
+# # ##############################################
+# # # Functions defining mathematical program P1 #
+# # ##############################################
+
+# # number of elements of the mathematical program
+# # returns nb_variables, nb_ineq_ctrs, nb_eq_ctrs
+# def math_prog_dims():
+#     return 2,2,0 # 2 varibales, 2 fct g and 0 fct h
+
+# # returns the value of the objective function at x
+# def compute_objective_function(x):
+#     return x[0]-4*x[1]
+
+# # returns the value of the functions defining the inequality constraints at x
+# def compute_ineq_ctrs_functions(x):
+#     return np.array([ -x[0]-x[1] + 2, x[1] -1  ])
+
+# # returns the value of the functions defining the equality constraints at x
+# def compute_eq_ctrs_functions(x):
+#     return np.array([])
+
+# # compute the value of the dual function for given multipliers 
+# # pi (for inequality constraints) and mu (for equality constraints)
+# # returns the value, and an optimal solution of the Lagrange subproblem
+# def compute_dual_function(pi,mu):
+#     lagrange_costs = [1-pi[0],-4-pi[0]+pi[1]]
+#     optimal_sol = [(3 if v<0 else 0) for v in lagrange_costs]
+#     return np.dot(optimal_sol,lagrange_costs) + np.dot([2,-1],pi), optimal_sol
+
+# # returns an arbitrary feasible solution
+# def feasible_x_sol():
+#     return [3,1]
+# ##################################
+# # End of mathematical program P1 #
+# ##################################
+
+# # ##############################################
+# # # Functions defining mathematical program P2 #
+# # ##############################################
+
+# # number of elements of the mathematical program
+# # returns nb_variables, nb_ineq_ctrs, nb_eq_ctrs
+# # def math_prog_dims():
+# #     return 2,1,0
+
+# # # returns the value of the objective function at x
+# # def compute_objective_function(x):
+# #     return (x[0]-2)*(x[0]-2)+0.25*x[1]*x[1]
+
+# # # returns the value of the functions defining the inequality constraints at x
+# # def compute_ineq_ctrs_functions(x):
+# #     return np.array([ x[0]-3.5*x[1]-1 ])
+
+# # # returns the value of the functions defining the equality constraints at x
+# # def compute_eq_ctrs_functions(x):
+# #     return np.array([])
+
+# # # compute the value of the dual function for given multipliers 
+# # # pi (for inequality constraints) and mu (for equality constraints)
+# # # returns the value, and an optimal solution of the Lagrange subproblem
+# # def compute_dual_function(pi,mu):
+# #     optimal_sol=[2-1.5*pi[0],pi[0]]
+# #     return -2.5*pi[0]*pi[0]+pi[0], optimal_sol
+
+# # # returns an arbitrary feasible solution
+# # def feasible_x_sol():
+# #     return [0,4/3]
+# ##################################
+# # End of mathematical program P2 #
+# ##################################
+
+###################################################################################
+# Functions required for the weighted tardiness single machine scheduling problem #
+###################################################################################
+class SchedulingInstance:
+    """
+    Represents a single-machine scheduling instance with weighted tardiness data.
+    Attributes:
+        nb_jobs (int): Number of jobs in the instance.
+        processing_times (list[int]): Processing time for each job.
+        weights (list[int]): Penalty weight for each job.
+        due_dates (list[int]): Due date for each job.
+        horizon (int): Total processing time of all jobs (planning horizon).
+    Methods:
+        from_file(file_path):
+            Build and return a SchedulingInstance from a text file.
+            Expected file format:
+                - First non-empty line: number of jobs (integer).
+                - Next non-empty lines: one job per line with
+                  "processing_time due_date weight".
+            Raises:
+                ValueError: If the file is empty, malformed, or job count is inconsistent.
+    """
+    def __init__(self, nb_jobs, processing_times, weights, due_dates):
+        self.nb_jobs=nb_jobs
+        self.processing_times=processing_times
+        self.weights=weights
+        self.due_dates=due_dates
+        self.horizon=sum(processing_times)
+    
+    # read from file
+    @staticmethod
+    def from_file(file_path):
+        with open(file_path) as f:
+            first_line = f.readline().strip()
+            if first_line == "":
+                raise ValueError("Input file is empty.")
+            nb_jobs=int(first_line)
+            # in each line, the first number is the processing time, the second number is the due date, the third number is the weight
+            processing_times=[0]*nb_jobs
+            weights=[0]*nb_jobs
+            due_dates = [0]*nb_jobs
+            job_idx = 0
+            for line in f:
+                stripped = line.strip()
+                if stripped == "":
+                    continue
+                values = stripped.split()
+                if len(values) < 3:
+                    raise ValueError(f"Invalid job line: '{stripped}'. Expected 3 values.")
+                if job_idx >= nb_jobs:
+                    raise ValueError("File contains more jobs than declared in the first line.")
+                processing_times[job_idx] = int(values[0])
+                due_dates[job_idx] = int(values[1])
+                weights[job_idx] = int(values[2])
+                job_idx += 1
+
+            if job_idx != nb_jobs:
+                raise ValueError(
+                    f"File contains {job_idx} jobs but first line declares {nb_jobs}."
+                )
+
+            return SchedulingInstance(nb_jobs, processing_times, weights, due_dates)
+
+
+
+
+# ##############################################
+# #  Code used by several methods              #
+# # To implement the Lagrangian relaxations of #
+# # the weighted tardiness scheduling problem, #
+# # it is recommended to modify the prototypes #
+# # of the functions to include an "instance"  #
+# # object to the parameters.                  #
+# ##############################################
+# # Returns the subgradient split in two parts:
+# # first, the indices associated with inequality constraints,
+# # second, the indices associated with equality constraints,
+# def compute_subgradient(x):
+#     return compute_ineq_ctrs_functions(x), compute_eq_ctrs_functions(x)
+
+# # Projects the set of multipliers associated with inequality constraints
+# # onto the non-negative orthant (returns the vector of multipliers with 
+# # negative components set to zero).
+# def project_solution(pi):
+#     # np array much faster than list comprehension
+#     if isinstance(pi, np.ndarray):
+#         return np.maximum(pi, 0)
+    
+#     # compherension list slow
+#     return [max(x, 0) for x in pi]
+
+# # Returns the new step size
+# def update_step_size(step_size):
+#     # choix arbitraire 0.8 ; should be decreasing and not too fast
+#     return 0.8 * step_size
+
+
+# ##############################################
+# #          Basic subgradient procedure       #
+# ##############################################
+# def subgradient_basic(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float):
+#     pi = initial_pi
+#     mu = initial_mu # TODO: update mu in the algo
+
+#     step_size = 2.0  # initial step
+
+#     best_Dualvalue = -math.inf
+#     best_x = None
+
+#     history = [] # to track
+
+#     while step_size > min_step_size:
+#         # solve Lagrangian subproblem
+#         dual_value, x = compute_dual_function(pi, mu)
+
+#         # keep best
+#         if dual_value > best_Dualvalue:
+#             best_Dualvalue = dual_value
+#             best_x = x
+
+#         # subgradient
+#         sg_pi, sg_mu = compute_subgradient(x)
+
+#         # update multipliers
+#         pi = pi + step_size * sg_pi 
+#         mu = mu + step_size * sg_mu
+
+#         # projection pi >= 0
+#         pi = project_solution(pi) # returns compherension list
+
+#         # update step
+#         step_size = update_step_size(step_size)
+
+#         # update the history
+#         history.append({
+#             "dual_value": dual_value,
+#             "pi": np.copy(pi),
+#             "mu": np.copy(mu)
+#         })
+#     return round(best_Dualvalue, 2), best_x, history
+
+# ##############################################################
+# #          Subgradient with Polyak step size procedure       #
+# ##############################################################
+# def update_polyak_step_size(beta_k, L_star, L_k, d_k):
+#     """
+#     Polyak's ruke s_k = beta_k * (L_star - L_k) / ||d_k||**2
+#     L_star: primal bound
+#     L_k: dual value at iteration k
+#     d_k: subgradient at iteration k
+#     beta_k: parameter in (0,1)
+#     s_k: step size at iteration k
+#     """
+#     norm_squared = LA.norm(d_k) ** 2
+    
+#     if norm_squared == 0:
+#         return 0.0 # */0 = 0 to avoid complication 
+    
+#     return beta_k * (L_star - L_k) / norm_squared
+
+# def subgradient_Polyak(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float):
+#     pi = initial_pi
+#     mu = initial_mu # TODO: update mu in the algo
+
+#     step_size = 2.0  # initial step
+#     beta_k = 1.0 
+#     # if beta_k is constant then the method is not guaranteed to converge TAKES to LONG
+#     # beta_k will be updated down
+
+#     L_star = compute_objective_function(feasible_x_sol()) # primal bound
+
+#     best_Dualvalue = -math.inf
+#     best_x = None
+
+#     history = [] # to track
+
+#     while step_size > min_step_size:
+#         # solve Lagrangian subproblem
+#         dual_value, x = compute_dual_function(pi, mu)
+
+#         # keep best
+#         if dual_value > best_Dualvalue:
+#             best_Dualvalue = dual_value
+#             best_x = x
+
+#         # subgradient
+#         sg_pi, sg_mu = compute_subgradient(x)
+
+#         # update multipliers
+#         pi = pi + step_size * sg_pi 
+#         mu = mu + step_size * sg_mu
+
+#         # projection pi >= 0
+#         pi = np.array(project_solution(pi))
+
+#         # update step (basic method)
+#         d_k = np.concatenate([sg_pi, sg_mu])
+#         step_size = update_polyak_step_size(beta_k, L_star, dual_value, d_k)
+
+#         # update beta_k (Polyak's rule)
+#         beta_k = update_step_size(beta_k) 
+#         # TODO: update beta_k differently ?
+#         # beta_k = 0.8 * beta_k (currectly implemented) OK
+
+#         # update the history
+#         history.append({
+#             "dual_value": dual_value,
+#             "pi": np.copy(pi),
+#             "mu": np.copy(mu)
+#         })
+#     return round(best_Dualvalue, 2), best_x, history
+
+
+# ##############################################
+# #     Deflected subgradient procedure: ADS   #
+# ##############################################
+# def compute_direction_ADS(sg_pi, sg_mu, direction_pi, direction_mu):
+#     """
+#     ADS = Average Direction Strategy
+#         = d^k = g^k + psi * d^(k-1)
+#     where: psi = ||g^k|| / ||d^(k-1)||
+
+#     if 
+#         - first iteration => no previous direction (case 1)
+#         - previous direction = 0 norm  (case 2)
+#     then d^k = g^k
+#     """    
+
+#     # pi update
+#     norm_prev_pi = np.linalg.norm(direction_pi)
+#     norm_sg_pi = np.linalg.norm(sg_pi)
+
+#     if norm_prev_pi == 0:
+#         new_direction_pi = np.copy(sg_pi) # case 1 & case 2 ; case 1 => bcse since direction_pi is initialized to 0 so the norm will become 0
+#     else:
+#         psi_pi = norm_sg_pi / norm_prev_pi
+#         new_direction_pi = sg_pi + psi_pi * direction_pi
+
+#         # avoid null direction TODO: is it possible? and necessary?
+#         if np.linalg.norm(new_direction_pi) == 0:
+#             new_direction_pi = np.copy(sg_pi)
+
+#     # mu update 
+#     # (same logic as pi update) # TODO: is it correct? 
+#     norm_prev_mu = np.linalg.norm(direction_mu)
+#     norm_sg_mu = np.linalg.norm(sg_mu)
+
+#     if norm_prev_mu == 0:
+#         new_direction_mu = np.copy(sg_mu)
+#     else:
+#         psi_mu = norm_sg_mu / norm_prev_mu
+#         new_direction_mu = sg_mu + psi_mu * direction_mu
+
+#         if np.linalg.norm(new_direction_mu) == 0:
+#             new_direction_mu = np.copy(sg_mu)
+
+#     return new_direction_pi, new_direction_mu
+
+
+# def subgradient_ADS(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float):
+#     pi = initial_pi
+#     mu = initial_mu 
+
+#     # previous directions 
+#     direction_pi = np.zeros_like(pi) # intialized to 0 it's why in the compute_direction_ADS for the case 1 we permit to use norm=0
+#     direction_mu = np.zeros_like(mu)
+
+#     step_size = 2.0
+
+#     best_Dualvalue = -math.inf
+#     best_x = None
+
+#     history = []
+
+#     while step_size > min_step_size:
+#         # solve Lagrangian subproblem
+#         dual_value, x = compute_dual_function(pi, mu)
+
+#         # keep best
+#         if dual_value > best_Dualvalue:
+#             best_Dualvalue = dual_value
+#             best_x = x
+
+#         # subgradient
+#         sg_pi, sg_mu = compute_subgradient(x)
+
+#         # ADS direction
+#         direction_pi, direction_mu = compute_direction_ADS(
+#             sg_pi, sg_mu, direction_pi, direction_mu
+#         )
+
+#         # update multipliers
+#         pi = pi + step_size * sg_pi 
+#         mu = mu + step_size * sg_mu
+
+#         # projection pi >= 0
+#         pi = np.array(project_solution(pi), dtype=float) # returns compherension list then converted to npArray
+
+#         # update step
+#         step_size = update_step_size(step_size)
+
+#         # update the history
+#         # we save all for reuse
+#         history.append({
+#             "dual_value": dual_value,
+#             "best_dual": best_Dualvalue,
+#             "step": step_size,
+#             "pi": np.copy(pi),
+#             "mu": np.copy(mu)
+#         })
+        
+#     return round(best_Dualvalue, 2), best_x, history
+
+
+
+# ##############################################
+# #                Cutting planes              #
+# ##############################################
+# def initialize_master_program(nb_ineq_ctrs, nb_eq_ctrs, initial_x_sol):
+#     # TODO: complete the code
+#     pass
+
+# def cutting_planes(epsilon):
+#     # TODO: complete the code
+#     pass
