@@ -1,4 +1,5 @@
-from readData import *
+from readData_progDyn import *
+import numpy as np
 
 def relax1(nbItems, T, processingTimes, dueDates, penalties):
     INF = float('inf')
@@ -34,7 +35,6 @@ def relax1(nbItems, T, processingTimes, dueDates, penalties):
 
 
 def relax2(nbItems, T, processingTimes, dueDates, penalties):
-
     INF = float('inf')
     L_tab = [[INF]*(nbItems+1) for _ in range(T+1)]
     choice_tab = [[-1]*(nbItems+1) for _ in range(T+1)]
@@ -71,3 +71,17 @@ def relax2(nbItems, T, processingTimes, dueDates, penalties):
     print("Sequence:", sequence)
 
     return L_tab, sequence
+
+def isUnique(sequence):
+    return len(np.unique(np.array(sequence))) == len(sequence)
+
+def optimalOrRealisableOrInfesable(sequence, nbItems, T, processingTimes):
+    total_time = sum(processingTimes[i] for i in sequence)
+    # Case 1 : borne duale trouver est feasible for original problem alors optimal for intial pb (par th de dualite forte)
+    if len(sequence) == nbItems and isUnique(sequence) and total_time == T:
+        return "Solution réalisable (donc optimale)"
+    # Case 2 : relaxation solution but not feasible for intial pb 
+    elif total_time == T:
+        return "Solution NON réalisable (borne dual)"
+    else:
+        return "ERROR"

@@ -1,10 +1,8 @@
 import numpy as np
 
-
-# ##############################################
-# # Functions defining mathematical program P1 #
-# ##############################################
-
+##############################################
+# Functions defining mathematical program P1 #
+##############################################
 def p1_math_prog_dims():
     return 2, 2, 0  # 2 variables, 2 inequality ctrs, 0 equality ctrs
 
@@ -31,10 +29,9 @@ def p1_feasible_x_sol():
     return [3, 1]
 
 
-# ##############################################
-# # Functions defining mathematical program P2 #
-# ##############################################
-
+##############################################
+# Functions defining mathematical program P2 #
+##############################################
 def p2_math_prog_dims():
     return 2, 1, 0
 
@@ -58,65 +55,6 @@ def p2_compute_dual_function(pi, mu):
 
 def p2_feasible_x_sol():
     return [0, 4 / 3]
-
-
-PROBLEMS = {
-    "P1": {
-        "math_prog_dims": p1_math_prog_dims,
-        "compute_objective_function": p1_compute_objective_function,
-        "compute_ineq_ctrs_functions": p1_compute_ineq_ctrs_functions,
-        "compute_eq_ctrs_functions": p1_compute_eq_ctrs_functions,
-        "compute_dual_function": p1_compute_dual_function,
-        "feasible_x_sol": p1_feasible_x_sol,
-    },
-    "P2": {
-        "math_prog_dims": p2_math_prog_dims,
-        "compute_objective_function": p2_compute_objective_function,
-        "compute_ineq_ctrs_functions": p2_compute_ineq_ctrs_functions,
-        "compute_eq_ctrs_functions": p2_compute_eq_ctrs_functions,
-        "compute_dual_function": p2_compute_dual_function,
-        "feasible_x_sol": p2_feasible_x_sol,
-    },
-}
-
-
-ACTIVE_PROBLEM = "P1"
-
-
-def set_active_problem(problem_name):
-    if problem_name not in PROBLEMS:
-        raise ValueError(f"Unknown problem '{problem_name}'. Available: {list(PROBLEMS)}")
-    global ACTIVE_PROBLEM
-    ACTIVE_PROBLEM = problem_name
-
-
-def get_active_problem():
-    return PROBLEMS[ACTIVE_PROBLEM]
-
-
-# Backward-compatible API used by the rest of the codebase.
-def math_prog_dims():
-    return get_active_problem()["math_prog_dims"]()
-
-
-def compute_objective_function(x):
-    return get_active_problem()["compute_objective_function"](x)
-
-
-def compute_ineq_ctrs_functions(x):
-    return get_active_problem()["compute_ineq_ctrs_functions"](x)
-
-
-def compute_eq_ctrs_functions(x):
-    return get_active_problem()["compute_eq_ctrs_functions"](x)
-
-
-def compute_dual_function(pi, mu):
-    return get_active_problem()["compute_dual_function"](pi, mu)
-
-
-def feasible_x_sol():
-    return get_active_problem()["feasible_x_sol"]()
 
 ###################################################################################
 # Functions required for the weighted tardiness single machine scheduling problem #
@@ -180,3 +118,82 @@ class SchedulingInstance:
                 )
 
             return SchedulingInstance(nb_jobs, processing_times, weights, due_dates)
+
+#################################################################
+# Functions defining mathematical program P3=Weighted Tardiness #
+#################################################################
+def p3_math_prog_dims():
+    pass
+
+def p3_compute_objective_function():
+    pass
+
+def p3_compute_ineq_ctrs_functions():
+    pass
+        
+def p3_compute_eq_ctrs_functions():
+    pass
+
+def p3_compute_dual_function():
+    pass
+
+def p3_feasible_x_sol()   :
+    pass
+
+PROBLEMS = {
+    "P1": {
+        "math_prog_dims": p1_math_prog_dims,
+        "compute_objective_function": p1_compute_objective_function,
+        "compute_ineq_ctrs_functions": p1_compute_ineq_ctrs_functions,
+        "compute_eq_ctrs_functions": p1_compute_eq_ctrs_functions,
+        "compute_dual_function": p1_compute_dual_function,
+        "feasible_x_sol": p1_feasible_x_sol,
+    },
+    "P2": {
+        "math_prog_dims": p2_math_prog_dims,
+        "compute_objective_function": p2_compute_objective_function,
+        "compute_ineq_ctrs_functions": p2_compute_ineq_ctrs_functions,
+        "compute_eq_ctrs_functions": p2_compute_eq_ctrs_functions,
+        "compute_dual_function": p2_compute_dual_function,
+        "feasible_x_sol": p2_feasible_x_sol,
+    },
+    "P3": {
+        "math_prog_dims": p3_math_prog_dims,
+        "compute_objective_function": p3_compute_objective_function,
+        "compute_ineq_ctrs_functions": p3_compute_ineq_ctrs_functions,
+        "compute_eq_ctrs_functions": p3_compute_eq_ctrs_functions,
+        "compute_dual_function": p3_compute_dual_function,
+        "feasible_x_sol": p3_feasible_x_sol,    
+    }
+}
+
+
+ACTIVE_PROBLEM = ""
+
+def set_active_problem(problem_name):
+    if problem_name not in PROBLEMS:
+        raise ValueError(f"Unknown problem '{problem_name}'. Available: {list(PROBLEMS)}")
+    global ACTIVE_PROBLEM
+    ACTIVE_PROBLEM = problem_name
+
+def get_active_problem():
+    return PROBLEMS[ACTIVE_PROBLEM]
+
+# Backward-compatible API used by the rest of the codebase.
+def math_prog_dims():
+    return get_active_problem()["math_prog_dims"]()
+
+def compute_objective_function(x):
+    return get_active_problem()["compute_objective_function"](x)
+
+def compute_ineq_ctrs_functions(x):
+    return get_active_problem()["compute_ineq_ctrs_functions"](x)
+
+def compute_eq_ctrs_functions(x):
+    return get_active_problem()["compute_eq_ctrs_functions"](x)
+
+def compute_dual_function(pi, mu):
+    return get_active_problem()["compute_dual_function"](pi, mu)
+
+def feasible_x_sol():
+    return get_active_problem()["feasible_x_sol"]()
