@@ -137,9 +137,12 @@ def p3_compute_eq_ctrs_functions():
 def p3_compute_dual_function():
     pass
 
-def p3_feasible_x_sol()   :
+def p3_feasible_x_sol():
     pass
 
+############################################
+# Redirectly to their correcponding models #
+############################################
 PROBLEMS = {
     "P1": {
         "math_prog_dims": p1_math_prog_dims,
@@ -179,7 +182,6 @@ def set_active_problem(problem_name):
 def get_active_problem():
     return PROBLEMS[ACTIVE_PROBLEM]
 
-# Backward-compatible API used by the rest of the codebase.
 def math_prog_dims():
     return get_active_problem()["math_prog_dims"]()
 
