@@ -2,15 +2,14 @@ import math
 import numpy as np
 import numpy.typing as npt # searched on internet for type specification of numpy array[float] to avoid confusion with int or even list
 from numpy import linalg as LA
-from problems import *
-# (
-#     set_active_problem,
-#     compute_ineq_ctrs_functions,
-#     compute_eq_ctrs_functions,
-#     compute_dual_function,
-#     compute_objective_function,
-#     feasible_x_sol,
-# )
+from problems import (
+    set_active_problem,
+    compute_ineq_ctrs_functions,
+    compute_eq_ctrs_functions,
+    compute_dual_function,
+    compute_objective_function,
+    feasible_x_sol,
+)
 
 ##############################################
 #  Code used by several methods              #
@@ -38,27 +37,36 @@ def project_solution(pi):
     return [max(x, 0) for x in pi]
 
 # Returns the new step size
-def update_step_size(step_size):
+def update_step_size(step_size, gamma=0.8):
     # choix arbitraire 0.8 ; should be decreasing and not too fast
-    return 0.8 * step_size
+    return gamma * step_size
 
 
 ##############################################
 #          Basic subgradient procedure       #
 ##############################################
-def subgradient_basic(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float, problem_name: str ):
+def subgradient_basic(
+    initial_pi: npt.NDArray[np.float64],
+    initial_mu: npt.NDArray[np.float64],
+    min_step_size: float,
+    problem_name: str,
+    initial_step_size: float = 2.0,
+    gamma: float = 0.8,
+    max_iterations: int | None = None,
+):
     set_active_problem(problem_name)
     pi = initial_pi
     mu = initial_mu 
 
-    step_size = 2.0  # initial step
+    step_size = float(initial_step_size)
 
     best_Dualvalue = -math.inf
     best_x = None
 
     history = [] # to track
 
-    while step_size > min_step_size:
+    iteration = 0
+    while step_size > min_step_size and (max_iterations is None or iteration < max_iterations):
         # solve Lagrangian subproblem
         dual_value, x = compute_dual_function(pi, mu)
 
@@ -78,7 +86,7 @@ def subgradient_basic(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArr
         pi = project_solution(pi) # returns compherension list
 
         # update step
-        step_size = update_step_size(step_size)
+        step_size = update_step_size(step_size, gamma)
 
         # update the history
         history.append({
@@ -86,6 +94,7 @@ def subgradient_basic(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArr
             "pi": np.copy(pi),
             "mu": np.copy(mu)
         })
+        iteration += 1
     return round(best_Dualvalue, 2), best_x, history
 
 ##############################################################
@@ -107,13 +116,22 @@ def update_polyak_step_size(beta_k, L_star, L_k, d_k):
     
     return beta_k * (L_star - L_k) / norm_squared
 
-def subgradient_Polyak(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float, problem_name: str):
+def subgradient_Polyak(
+    initial_pi: npt.NDArray[np.float64],
+    initial_mu: npt.NDArray[np.float64],
+    min_step_size: float,
+    problem_name: str,
+    beta0: float = 1.0,
+    gamma: float = 0.8,
+    initial_step_size: float = 2.0,
+    max_iterations: int | None = None,
+):
     set_active_problem(problem_name)
     pi = initial_pi
     mu = initial_mu 
 
-    step_size = 2.0  # initial step
-    beta_k = 1.0 
+    step_size = float(initial_step_size)
+    beta_k = float(beta0)
     # if beta_k is constant then the method is not guaranteed to converge TAKES to LONG
     # beta_k will be updated down
 
@@ -124,7 +142,8 @@ def subgradient_Polyak(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDAr
 
     history = [] # to track
 
-    while step_size > min_step_size:
+    iteration = 0
+    while step_size > min_step_size and (max_iterations is None or iteration < max_iterations):
         # solve Lagrangian subproblem
         dual_value, x = compute_dual_function(pi, mu)
 
@@ -148,7 +167,7 @@ def subgradient_Polyak(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDAr
         step_size = update_polyak_step_size(beta_k, L_star, dual_value, d_k)
 
         # update beta_k (Polyak's rule)
-        beta_k = update_step_size(beta_k) 
+        beta_k = update_step_size(beta_k, gamma)
         
         # update the history
         history.append({
@@ -156,6 +175,7 @@ def subgradient_Polyak(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDAr
             "pi": np.copy(pi),
             "mu": np.copy(mu)
         })
+        iteration += 1
     return round(best_Dualvalue, 2), best_x, history
 
 
@@ -260,3 +280,13 @@ def subgradient_ADS(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray
         
     return round(best_Dualvalue, 2), best_x, history
 
+# ##############################################
+# #                Cutting planes              #
+# ##############################################
+def initialize_master_program(nb_ineq_ctrs, nb_eq_ctrs, initial_x_sol):
+    # TODO: complete the code
+    pass
+
+def cutting_planes(epsilon):
+    # TODO: complete the code
+    pass
