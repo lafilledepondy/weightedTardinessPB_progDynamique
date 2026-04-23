@@ -355,7 +355,7 @@ def solve_master_program(master_data):
     return lambda_r, t_r
 
 
-def cutting_planes(epsilon, problem_name: str):
+def cutting_planes(epsilon, problem_name: str, return_history: bool = False):
     set_active_problem(problem_name)
     x1 = feasible_x_sol()
 
@@ -373,6 +373,7 @@ def cutting_planes(epsilon, problem_name: str):
     LB = -math.inf
 
     best_lambda = np.zeros(nb_ineq_ctrs)
+    history = []
 
     # main loop Algorithm 3.4.1
     while UB - LB > epsilon:
@@ -396,4 +397,14 @@ def cutting_planes(epsilon, problem_name: str):
             master_data["cuts"].append(new_cut)
             r += 1
 
-    return best_lambda, round(LB, 2), round(UB, 2)        
+        history.append({
+            "dual_value": float(L_lambda_r),
+            "lower_bound": float(LB),
+            "upper_bound": float(UB),
+            "gap": float(UB - LB),
+        })
+
+    if return_history:
+        return best_lambda, round(LB, 2), round(UB, 2), history
+
+    return best_lambda, round(LB, 2), round(UB, 2)       

@@ -1,5 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SRC_PATH = PROJECT_ROOT / "src"
+if str(SRC_PATH) not in sys.path:
+	sys.path.insert(0, str(SRC_PATH))
 
 from subgradients import (
 	subgradient_basic,
@@ -68,14 +75,35 @@ def compare_dual_value_methods(
 		if result is None:
 			return None
 
-		if isinstance(result, tuple) and len(result) >= 3:
-			best_dual, _, history = result[:3]
-			dual_values = [it["dual_value"] for it in history]
+		if isinstance(result, tuple) and len(result) >= 4 and isinstance(result[3], list):
+			best_dual = result[1]
+			history = result[3]
+			dual_values = [it["dual_value"] for it in history if "dual_value" in it]
 			return {
 				"best_dual": best_dual,
 				"dual_values": dual_values,
 				"iterations": len(dual_values),
 			}
+
+		if isinstance(result, tuple) and len(result) >= 3:
+			# Subgradient methods return (best_dual, best_x, history).
+			if isinstance(result[2], list):
+				best_dual, _, history = result[:3]
+				dual_values = [it["dual_value"] for it in history]
+				return {
+					"best_dual": best_dual,
+					"dual_values": dual_values,
+					"iterations": len(dual_values),
+				}
+
+			# Cutting planes returns (best_lambda, LB, UB) without iteration history.
+			if isinstance(result[1], (int, float, np.floating)):
+				best_dual = float(result[1])
+				return {
+					"best_dual": best_dual,
+					"dual_values": [best_dual],
+					"iterations": 1,
+				}
 
 		if isinstance(result, dict):
 			history = result.get("history", [])
@@ -121,7 +149,11 @@ def compare_dual_value_methods(
 			problem_name=problem_name,
 			**ads_kwargs,
 		),
-		"cutting_planes": lambda: cutting_planes(**cutting_planes_kwargs),
+		"cutting_planes": lambda: cutting_planes(
+			epsilon=cutting_planes_kwargs.get("epsilon", min_step_size),
+			problem_name=problem_name,
+			return_history=True,
+		),
 	}
 
 	for method_name, solver_call in method_calls.items():
