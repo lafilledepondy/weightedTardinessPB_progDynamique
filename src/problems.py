@@ -122,23 +122,56 @@ class SchedulingInstance:
 #################################################################
 # Functions defining mathematical program P3=Weighted Tardiness #
 #################################################################
-def p3_math_prog_dims():
-    pass
+def p3_math_prog_dims(instance: SchedulingInstance):
+    
 
-def p3_compute_objective_function():
-    pass
+    I= list(range(instance.nb_jobs))
+    T= list(range(instance.horizon+1))
+    Ti={ i: list(range(instance.horizon -instance.processing_times[i]+1)) for i in I }
+    return I*Ti, T, I #number of variables I*Ti, number of inequality ctrs T, number of equality ctrs I
 
-def p3_compute_ineq_ctrs_functions():
-    pass
+def p3_cost(instance: SchedulingInstance,i, t):
+    p_i=instance.processing_times[i]
+    d_i=instance.due_dates[i]
+    w_i=instance.weights[i]
+    return w_i * max(0, t + p_i - d_i) #t+pi-di <0 pas de retard
+
+def p3_compute_objective_function(instance: SchedulingInstance, Ti, x):
+    obj=0
+    for i in range(instance.nb_jobs):
+        for t in Ti[i]:
+            if x[i][t] > 0:
+                obj += p3_cost(instance, i, t) * x[i][t]
+    return obj
+    
+def p3_compute_eq_ctrs_functions(instance: SchedulingInstance, Ti, x):
+    return [sum (x[i][t] for t in Ti[i]) - 1 for i in range(instance.nb_jobs)]
         
-def p3_compute_eq_ctrs_functions():
+def p3_compute_ineq_ctrs_functions(instance: SchedulingInstance, Ti, x):
+    load=0 *(instance.horizon+1)
+    for i in range(instance.nb_jobs):
+            p_i = instance.processing_times[i]
+            for t_prime in Ti[i]:
+                if x[i][t_prime] > 0:
+                    for s in range(t_prime, t_prime + p_i):
+                        if s <= instance.horizon:
+                            load[s] += x[i][t_prime]
+    return [l-1 for l in load]
+                           
+
+def p3_compute_dual_function(instance: SchedulingInstance, Ti, mu):
     pass
 
-def p3_compute_dual_function():
-    pass
-
-def p3_feasible_x_sol():
-    pass
+def p3_feasible_x_sol(instance: SchedulingInstance, Ti):
+    x={i:{t: 0 for t in Ti[i]} for i in range(instance.nb_jobs)}
+    current_time=0
+    for i in range(instance.nb_jobs):
+        t=current_time
+        if t not in Ti[i]:
+            t= Ti[i][0]
+        x[i][t]=1
+        current_time += instance.processing_times[i]
+    return x
 
 ############################################
 # Redirectly to their correcponding models #
