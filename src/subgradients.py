@@ -2,6 +2,7 @@ import math
 import numpy as np
 import numpy.typing as npt # searched on internet for type specification of numpy array[float] to avoid confusion with int or even list
 from numpy import linalg as LA
+from scipy.optimize import linprog
 from problems import (
     set_active_problem,
     compute_ineq_ctrs_functions,
@@ -280,13 +281,119 @@ def subgradient_ADS(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray
         
     return round(best_Dualvalue, 2), best_x, history
 
-# ##############################################
-# #                Cutting planes              #
-# ##############################################
+##############################################
+#                Cutting planes              #
+##############################################
 def initialize_master_program(nb_ineq_ctrs, nb_eq_ctrs, initial_x_sol):
-    # TODO: complete the code
-    pass
+    """
+    (D^1_Epi) ; Algorithm 3.4.1
+    max t
+    s.t. t <= f(x^k) + lambda^T g(x^k)     for generated cuts
+        lambda >= 0   
 
-def cutting_planes(epsilon):
-    # TODO: complete the code
-    pass
+    to initialize we are generating the 1st cut with the initial solution x1 (feasible) 
+    """
+
+    # first cut:
+    # t <= f(x1) + lambda^T g(x1)
+    f_x1 = compute_objective_function(initial_x_sol)
+    g_x1 = compute_ineq_ctrs_functions(initial_x_sol)
+
+    master_data = {
+        "nb_lambda": nb_ineq_ctrs,
+        "cuts": []
+    }
+
+    master_data["cuts"].append({
+        "f_val": f_x1,
+        "g_val": np.array(g_x1, dtype=float)
+    })
+
+    return master_data
+
+
+def solve_master_program(master_data):
+    """
+    solving the master program (D^1_Epi) with the cuts generated so far
+    """
+    m = master_data["nb_lambda"]
+    cuts = master_data["cuts"]
+
+    # maximize t <=> minimize -t
+    c = np.zeros(m + 1)
+    c[-1] = -1.0
+
+    A_ub = []
+    b_ub = []
+
+    for cut in cuts:
+        row = np.zeros(m + 1)
+
+        # -g_i * lambda_i + t <= f(x^k)
+        row[:m] = -cut["g_val"]
+        row[-1] = 1.0
+
+        A_ub.append(row)
+        b_ub.append(cut["f_val"])
+
+    bounds = [(0, None)] * m + [(None, None)]   # lambda >=0, t free
+
+    res = linprog(
+        c=c,
+        A_ub=np.array(A_ub),
+        b_ub=np.array(b_ub),
+        bounds=bounds,
+        method="highs"
+    )
+
+    if not res.success:
+        raise RuntimeError("Master program not solved.")
+
+    lambda_r = np.array(res.x[:m])
+    t_r = res.x[-1]
+
+    return lambda_r, t_r
+
+
+def cutting_planes(epsilon, problem_name: str):
+    set_active_problem(problem_name)
+    x1 = feasible_x_sol()
+
+    nb_ineq_ctrs = len(compute_ineq_ctrs_functions(x1))
+    nb_eq_ctrs = 0
+
+    master_data = initialize_master_program(
+        nb_ineq_ctrs,
+        nb_eq_ctrs,
+        x1
+    )
+
+    r = 2
+    UB = math.inf
+    LB = -math.inf
+
+    best_lambda = np.zeros(nb_ineq_ctrs)
+
+    # main loop Algorithm 3.4.1
+    while UB - LB > epsilon:
+        lambda_r, t_r = solve_master_program(master_data)
+        L_lambda_r, x_bar_r = compute_dual_function(lambda_r, np.array([])) # no mu in this problem
+        UB = t_r
+
+        if L_lambda_r > LB:
+            LB = L_lambda_r
+            best_lambda = lambda_r.copy()
+
+        if UB - LB > epsilon:
+            new_cut = {
+                "f_val": compute_objective_function(x_bar_r),
+                "g_val": np.array(
+                    compute_ineq_ctrs_functions(x_bar_r),
+                    dtype=float
+                )
+            }
+
+            master_data["cuts"].append(new_cut)
+            r += 1
+
+    return best_lambda, round(LB, 2), round(UB, 2)        
