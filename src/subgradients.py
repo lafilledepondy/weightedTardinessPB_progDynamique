@@ -2,14 +2,15 @@ import math
 import numpy as np
 import numpy.typing as npt # searched on internet for type specification of numpy array[float] to avoid confusion with int or even list
 from numpy import linalg as LA
-from problems import (
-    set_active_problem,
-    compute_ineq_ctrs_functions,
-    compute_eq_ctrs_functions,
-    compute_dual_function,
-    compute_objective_function,
-    feasible_x_sol,
-)
+from problems import *
+# (
+#     set_active_problem,
+#     compute_ineq_ctrs_functions,
+#     compute_eq_ctrs_functions,
+#     compute_dual_function,
+#     compute_objective_function,
+#     feasible_x_sol,
+# )
 
 ##############################################
 #  Code used by several methods              #
@@ -86,6 +87,64 @@ def subgradient_basic(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArr
             "mu": np.copy(mu)
         })
     return round(best_Dualvalue, 2), best_x, history
+
+
+
+
+
+
+##########################juste essai sur p3 sans toucher la tienne ########
+
+def compute_subgradientp3(instance, Ti, x):
+    return p3_compute_ineq_ctrs_functions(instance, Ti, x), p3_compute_eq_ctrs_functions(instance, Ti, x)
+
+
+def subgradient_p3(instance: SchedulingInstance, Ti, initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float, problem_name="P3" ):
+    #set_active_problem(problem_name)
+    pi = initial_pi
+    mu = initial_mu 
+
+    x_feassible= p3_feasible_x_sol(instance, Ti) 
+    best_UB= p3_compute_objective_function(instance, Ti, x_feassible) 
+
+    step_size = 2.0  # initial step
+
+    best_Dualvalue = -math.inf
+    best_x = None
+
+    history = [] # to track
+
+    while step_size > min_step_size:
+        # solve Lagrangian subproblem
+        dual_value, x = p3_compute_dual_function(instance, Ti, pi)
+
+        # keep best
+        if dual_value > best_Dualvalue:
+            best_Dualvalue = dual_value
+            best_x = x
+
+        # subgradient
+        sg_pi= p3_compute_ineq_ctrs_functions(instance, Ti, x)  
+        sg_mu = p3_compute_eq_ctrs_functions(instance, Ti, x)
+
+        # update multipliers
+        pi = pi + step_size * sg_pi 
+        mu = mu + step_size * sg_mu
+
+        # projection pi >= 0
+        pi = project_solution(pi) # returns compherension list
+
+        # update step
+        step_size = update_step_size(step_size)
+
+        # update the history
+        history.append({
+            "dual_value": dual_value,
+            "pi": np.copy(pi),
+            "mu": np.copy(mu)
+        })
+    return round(best_Dualvalue, 2), best_x, history
+
 
 ##############################################################
 #          Subgradient with Polyak step size procedure       #

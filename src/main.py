@@ -1,8 +1,9 @@
-from subgradients import subgradient_basic, subgradient_Polyak, subgradient_ADS
+from subgradients import subgradient_basic, subgradient_Polyak, subgradient_ADS, subgradient_p3
 from readData_progDyn import *
 from progDyn import relax1, relax2, optimalOrRealisableOrInfesable
 from test_progDyn import *
 from pathlib import Path
+
 
 import numpy as np
 
@@ -27,5 +28,12 @@ def main():
 
     # demo_progDyn()
 
+
+   
+    
+
 if __name__ == "__main__":
     main()
+   
+    
+    
