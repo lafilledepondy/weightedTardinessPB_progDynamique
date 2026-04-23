@@ -173,6 +173,61 @@ def p3_feasible_x_sol(instance: SchedulingInstance, Ti):
         current_time += instance.processing_times[i]
     return x
 
+
+#################################################################
+# Functions defining mathematical program P4=Weighted Tardiness #
+#################################################################
+def p4_math_prog_dims(instance: SchedulingInstance):
+    
+
+    I= list(range(instance.nb_jobs))
+    T= list(range(instance.horizon+1))
+    Ti={ i: list(range(instance.horizon -instance.processing_times[i]+1)) for i in I }
+    return I*Ti, T, I #number of variables I*Ti, number of inequality ctrs T, number of equality ctrs I
+
+def p4_cost(instance: SchedulingInstance,i, t):
+    p_i=instance.processing_times[i]
+    d_i=instance.due_dates[i]
+    w_i=instance.weights[i]
+    return w_i * max(0, t + p_i - d_i) #t+pi-di <0 pas de retard
+
+def p4_compute_objective_function(instance: SchedulingInstance, Ti, x):
+    obj=0
+    for i in range(instance.nb_jobs):
+        for t in Ti[i]:
+            if x[i][t] > 0:
+                obj += p4_cost(instance, i, t) * x[i][t]
+    return obj
+    
+def p4_compute_eq_ctrs_functions(instance: SchedulingInstance, Ti, x):
+    return [sum (x[i][t] for t in Ti[i]) - 1 for i in range(instance.nb_jobs)]
+        
+def p4_compute_ineq_ctrs_functions(instance: SchedulingInstance, Ti, x):
+    load=0 *(instance.horizon+1)
+    for i in range(instance.nb_jobs):
+            p_i = instance.processing_times[i]
+            for t_prime in Ti[i]:
+                if x[i][t_prime] > 0:
+                    for s in range(t_prime, t_prime + p_i):
+                        if s <= instance.horizon:
+                            load[s] += x[i][t_prime]
+    return [l-1 for l in load]
+                           
+
+def p4_compute_dual_function(instance: SchedulingInstance, Ti, mu):
+    pass
+
+def p4_feasible_x_sol(instance: SchedulingInstance, Ti):
+    x={i:{t: 0 for t in Ti[i]} for i in range(instance.nb_jobs)}
+    current_time=0
+    for i in range(instance.nb_jobs):
+        t=current_time
+        if t not in Ti[i]:
+            t= Ti[i][0]
+        x[i][t]=1
+        current_time += instance.processing_times[i]
+    return x
+
 ############################################
 # Redirectly to their correcponding models #
 ############################################
@@ -200,6 +255,14 @@ PROBLEMS = {
         "compute_eq_ctrs_functions": p3_compute_eq_ctrs_functions,
         "compute_dual_function": p3_compute_dual_function,
         "feasible_x_sol": p3_feasible_x_sol,    
+    },
+    "P4": {
+        "math_prog_dims": p4_math_prog_dims,
+        "compute_objective_function": p4_compute_objective_function,
+        "compute_ineq_ctrs_functions": p4_compute_ineq_ctrs_functions,
+        "compute_eq_ctrs_functions": p4_compute_eq_ctrs_functions,
+        "compute_dual_function": p4_compute_dual_function,
+        "feasible_x_sol": p4_feasible_x_sol,
     }
 }
 
