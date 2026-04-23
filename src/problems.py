@@ -123,19 +123,17 @@ class SchedulingInstance:
 # Functions defining mathematical program P3=Weighted Tardiness #
 #################################################################
 def p3_math_prog_dims(instance: SchedulingInstance):
-    
-
     I= list(range(instance.nb_jobs))
-    T= list(range(instance.horizon+1))
-    Ti={ i: list(range(instance.horizon -instance.processing_times[i]+1)) for i in I }
+    Ti = {i: list(range(instance.horizon - instance.processing_times[i] + 1)) for i in I}
+    return sum(len(Ti[i]) for i in I), instance.horizon+1, instance.nb_jobs  # number of variables I*Ti, number of inequality ctrs T, number of equality ctrs I
 
-    return sum(len(Ti[i]) for i in I), instance.horizon+1, instance.nb_jobs, Ti #number of variables I*Ti, number of inequality ctrs T, number of equality ctrs I
 
 def p3_cost(instance: SchedulingInstance,i, t):
     p_i=instance.processing_times[i]
     d_i=instance.due_dates[i]
     w_i=instance.weights[i]
     return w_i * max(0, t + p_i - d_i) #t+pi-di <0 pas de retard
+
 
 def p3_compute_objective_function(instance: SchedulingInstance, Ti, x):
     obj=0
@@ -144,14 +142,16 @@ def p3_compute_objective_function(instance: SchedulingInstance, Ti, x):
             if x[i][t] > 0:
                 obj += p3_cost(instance, i, t) * x[i][t]
     return obj
-    
+
+
 def p3_compute_eq_ctrs_functions(instance: SchedulingInstance, Ti, x):
     #return [sum (x[i][t] for t in Ti[i]) - 1 for i in range(instance.nb_jobs)]
     res=[]
     for i in range(instance.nb_jobs):
         res.append(np.sum(x[i,:]) - 1)
     return np.array(res)
-        
+
+
 def p3_compute_ineq_ctrs_functions(instance: SchedulingInstance, Ti, x):
     load= np.zeros(instance.horizon+1)
     for i in range(instance.nb_jobs):
@@ -189,7 +189,6 @@ def p3_compute_dual_function(instance: SchedulingInstance, Ti, mu):
     return dual_val, x_opt
             
 
-
 def p3_feasible_x_sol(instance: SchedulingInstance, Ti):
     x={i:{t: 0 for t in Ti[i]} for i in range(instance.nb_jobs)}
     current_time=0
@@ -206,18 +205,18 @@ def p3_feasible_x_sol(instance: SchedulingInstance, Ti):
 # Functions defining mathematical program P4=Weighted Tardiness #
 #################################################################
 def p4_math_prog_dims(instance: SchedulingInstance):
-    
-
     I= list(range(instance.nb_jobs))
     T= list(range(instance.horizon+1))
     Ti={ i: list(range(instance.horizon -instance.processing_times[i]+1)) for i in I }
     return I*Ti, T, I #number of variables I*Ti, number of inequality ctrs T, number of equality ctrs I
+
 
 def p4_cost(instance: SchedulingInstance,i, t):
     p_i=instance.processing_times[i]
     d_i=instance.due_dates[i]
     w_i=instance.weights[i]
     return w_i * max(0, t + p_i - d_i) #t+pi-di <0 pas de retard
+
 
 def p4_compute_objective_function(instance: SchedulingInstance, Ti, x):
     obj=0
@@ -226,10 +225,12 @@ def p4_compute_objective_function(instance: SchedulingInstance, Ti, x):
             if x[i][t] > 0:
                 obj += p4_cost(instance, i, t) * x[i][t]
     return obj
+
     
 def p4_compute_eq_ctrs_functions(instance: SchedulingInstance, Ti, x):
     return [sum (x[i][t] for t in Ti[i]) - 1 for i in range(instance.nb_jobs)]
-        
+
+
 def p4_compute_ineq_ctrs_functions(instance: SchedulingInstance, Ti, x):
     load= np.zeros(instance.horizon+1)
     for i in range(instance.nb_jobs):
@@ -244,6 +245,7 @@ def p4_compute_ineq_ctrs_functions(instance: SchedulingInstance, Ti, x):
 
 def p4_compute_dual_function(instance: SchedulingInstance, Ti, mu):
     pass
+
 
 def p4_feasible_x_sol(instance: SchedulingInstance, Ti):
     x={i:{t: 0 for t in Ti[i]} for i in range(instance.nb_jobs)}
@@ -296,30 +298,72 @@ PROBLEMS = {
 
 
 ACTIVE_PROBLEM = ""
+ACTIVE_INSTANCE = None
+ACTIVE_TI = None
 
-def set_active_problem(problem_name):
+def _compute_time_windows(instance: SchedulingInstance):
+    I = list(range(instance.nb_jobs))
+    return {i: list(range(instance.horizon - instance.processing_times[i] + 1)) for i in I}
+
+
+def _require_active_context():
+    if ACTIVE_INSTANCE is None:
+        raise ValueError("No active scheduling instance set for this problem.")
+    if ACTIVE_TI is None:
+        raise ValueError("No active time windows (Ti) set for this problem.")
+    return ACTIVE_INSTANCE, ACTIVE_TI
+
+
+def set_active_problem(problem_name, instance: SchedulingInstance | None = None, Ti=None):
     if problem_name not in PROBLEMS:
         raise ValueError(f"Unknown problem '{problem_name}'. Available: {list(PROBLEMS)}")
-    global ACTIVE_PROBLEM
+    global ACTIVE_PROBLEM, ACTIVE_INSTANCE, ACTIVE_TI
     ACTIVE_PROBLEM = problem_name
+    if problem_name in ("P3", "P4") and instance is not None:
+        ACTIVE_INSTANCE = instance
+        ACTIVE_TI = Ti if Ti is not None else _compute_time_windows(instance)
 
 def get_active_problem():
     return PROBLEMS[ACTIVE_PROBLEM]
 
 def math_prog_dims():
-    return get_active_problem()["math_prog_dims"]()
+    fn = get_active_problem()["math_prog_dims"]
+    if ACTIVE_PROBLEM in ("P3", "P4"):
+        instance, _ = _require_active_context()
+        return fn(instance)
+    return fn()
 
 def compute_objective_function(x):
-    return get_active_problem()["compute_objective_function"](x)
+    fn = get_active_problem()["compute_objective_function"]
+    if ACTIVE_PROBLEM in ("P3", "P4"):
+        instance, Ti = _require_active_context()
+        return fn(instance, Ti, x)
+    return fn(x)
 
 def compute_ineq_ctrs_functions(x):
-    return get_active_problem()["compute_ineq_ctrs_functions"](x)
+    fn = get_active_problem()["compute_ineq_ctrs_functions"]
+    if ACTIVE_PROBLEM in ("P3", "P4"):
+        instance, Ti = _require_active_context()
+        return fn(instance, Ti, x)
+    return fn(x)
 
 def compute_eq_ctrs_functions(x):
-    return get_active_problem()["compute_eq_ctrs_functions"](x)
+    fn = get_active_problem()["compute_eq_ctrs_functions"]
+    if ACTIVE_PROBLEM in ("P3", "P4"):
+        instance, Ti = _require_active_context()
+        return fn(instance, Ti, x)
+    return fn(x)
 
 def compute_dual_function(pi, mu):
-    return get_active_problem()["compute_dual_function"](pi, mu)
+    fn = get_active_problem()["compute_dual_function"]
+    if ACTIVE_PROBLEM in ("P3", "P4"):
+        instance, Ti = _require_active_context()
+        return fn(instance, Ti, pi)
+    return fn(pi, mu)
 
 def feasible_x_sol():
-    return get_active_problem()["feasible_x_sol"]()
+    fn = get_active_problem()["feasible_x_sol"]
+    if ACTIVE_PROBLEM in ("P3", "P4"):
+        instance, Ti = _require_active_context()
+        return fn(instance, Ti)
+    return fn()

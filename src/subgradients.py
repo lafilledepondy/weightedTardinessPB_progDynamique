@@ -4,6 +4,7 @@ import numpy.typing as npt # searched on internet for type specification of nump
 from numpy import linalg as LA
 from scipy.optimize import linprog
 from problems import (
+    SchedulingInstance,
     set_active_problem,
     compute_ineq_ctrs_functions,
     compute_eq_ctrs_functions,
@@ -51,11 +52,12 @@ def subgradient_basic(
     initial_mu: npt.NDArray[np.float64],
     min_step_size: float,
     problem_name: str,
+    instance: SchedulingInstance | None = None,
     initial_step_size: float = 2.0,
     gamma: float = 0.8,
     max_iterations: int | None = None,
 ):
-    set_active_problem(problem_name)
+    set_active_problem(problem_name, instance=instance)
     pi = initial_pi
     mu = initial_mu 
 
@@ -122,12 +124,13 @@ def subgradient_Polyak(
     initial_mu: npt.NDArray[np.float64],
     min_step_size: float,
     problem_name: str,
+    instance: SchedulingInstance | None = None,
     beta0: float = 1.0,
     gamma: float = 0.8,
     initial_step_size: float = 2.0,
     max_iterations: int | None = None,
 ):
-    set_active_problem(problem_name)
+    set_active_problem(problem_name, instance=instance)
     pi = initial_pi
     mu = initial_mu 
 
@@ -226,8 +229,14 @@ def compute_direction_ADS(sg_pi, sg_mu, direction_pi, direction_mu):
     return new_direction_pi, new_direction_mu
 
 
-def subgradient_ADS(initial_pi: npt.NDArray[np.float64], initial_mu: npt.NDArray[np.float64], min_step_size: float, problem_name: str):
-    set_active_problem(problem_name)
+def subgradient_ADS(
+    initial_pi: npt.NDArray[np.float64],
+    initial_mu: npt.NDArray[np.float64],
+    min_step_size: float,
+    problem_name: str,
+    instance: SchedulingInstance | None = None,
+):
+    set_active_problem(problem_name, instance=instance)
     pi = initial_pi
     mu = initial_mu 
 
@@ -355,8 +364,13 @@ def solve_master_program(master_data):
     return lambda_r, t_r
 
 
-def cutting_planes(epsilon, problem_name: str, return_history: bool = False):
-    set_active_problem(problem_name)
+def cutting_planes(
+    epsilon,
+    problem_name: str,
+    instance: SchedulingInstance | None = None,
+    return_history: bool = False,
+):
+    set_active_problem(problem_name, instance=instance)
     x1 = feasible_x_sol()
 
     nb_ineq_ctrs = len(compute_ineq_ctrs_functions(x1))
