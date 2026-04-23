@@ -1,4 +1,4 @@
-from subgradients import subgradient_basic, subgradient_Polyak, subgradient_ADS, subgradient_p3
+from subgradients import subgradient_basic, subgradient_Polyak, subgradient_ADS
 from readData_progDyn import *
 from progDyn import relax1, relax2, optimalOrRealisableOrInfesable
 from test_progDyn import *

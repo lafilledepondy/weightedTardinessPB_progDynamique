@@ -1,5 +1,3 @@
-import pytest
-
 from readData_progDyn import *
 from progDyn import relax1, relax2, optimalOrRealisableOrInfesable
 
