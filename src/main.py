@@ -4,6 +4,7 @@ from progDyn import relax1, relax2, optimalOrRealisableOrInfesable
 from test_progDyn import *
 from problems import SchedulingInstance, p3_compute_dual_function, p3_compute_ineq_ctrs_functions, p3_compute_objective_function, p3_math_prog_dims, p4_compute_objective_function
 from pathlib import Path
+import time
 
 
 import numpy as np
@@ -92,19 +93,39 @@ def main():
 
     print("P3-Weithed Tardiness Problem")
     project_root = Path(__file__).resolve().parents[1]
-    datafilePath = project_root / 'data_aone' / 'wt040' / 'wt040_001.dat'
+    datafilePath = project_root / 'data_ocsc' / 'wt040' / 'wt040_005.dat'
     instance = SchedulingInstance.from_file(datafilePath)
+
+    print("Instance :", datafilePath)
 
     initial_pi_p3 = np.ones(instance.horizon + 1, dtype=float)
     initial_mu_p3 = np.ones(instance.nb_jobs, dtype=float)
 
     I= list(range(instance.nb_jobs))
     Ti = {i: list(range(instance.horizon - instance.processing_times[i] + 1)) for i in I}
-
-    print("Subgradient Basic:", subgradient_basic(initial_pi_p3, initial_mu_p3, 0.000001, problem_name="P3", instance=instance, max_iterations=5)[0])
-    # print("Subgradient Polyak:", subgradient_Polyak(initial_pi_p3, initial_mu_p3, 0.000001, problem_name="P3", instance=instance)[0]) # DualValue
-    # print("Subgradient ADS:", subgradient_ADS(initial_pi_p3, initial_mu_p3, 0.000001, problem_name="P3", instance=instance)[0]) # DualValue
-    # print("Cutting Planes:", cutting_planes(0.000001, problem_name="P3", instance=instance)[1]) # LB = DualValue
+    start = time.time()
+    dual_value_p3, best_x, _ = subgradient_basic(initial_pi_p3, initial_mu_p3, 0.000001, problem_name="P3", instance=instance, max_iterations=100)
+    end = time.time()
+    print("Subgradient Basic:", dual_value_p3, "Best x:", best_x) # DualValue, Best x
+    print("Time taken:", end - start)
+    print("____________________________________________________________")
+    start = time.time()
+    dual_value_p3_polyak, best_x_polyak, _ = subgradient_Polyak(initial_pi_p3, initial_mu_p3, 0.000001, problem_name="P3", instance=instance, max_iterations=100)
+    print("Subgradient Polyak:", dual_value_p3_polyak, "Best x:", best_x_polyak) # DualValue
+    end = time.time()
+    print("Time taken:", end - start)
+    print("____________________________________________________________")
+    start = time.time()
+    dual_value_p3_ads, best_x_p3_ads, _ = subgradient_ADS(initial_pi_p3, initial_mu_p3, 0.000001, problem_name="P3", instance=instance, max_iterations=100)
+    print("Subgradient ADS:", dual_value_p3_ads, "Best x:", best_x_p3_ads) # DualValue
+    end = time.time()
+    print("Time taken:", end - start)
+    print("____________________________________________________________")
+    start = time.time()
+    dual_value_p3_cutting, best_x_p3_cutting, _ = cutting_planes(0.000001, problem_name="P3", instance=instance)
+    print("Cutting Planes:", dual_value_p3_cutting, "Best x:", best_x_p3_cutting) # LB = DualValue
+    end = time.time()
+    print("Time taken:", end - start)
 
     # demo_progDyn()  
 

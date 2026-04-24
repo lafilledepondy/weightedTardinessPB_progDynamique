@@ -235,6 +235,7 @@ def subgradient_ADS(
     min_step_size: float,
     problem_name: str,
     instance: SchedulingInstance | None = None,
+    max_iterations: int | None = None
 ):
     set_active_problem(problem_name, instance=instance)
     pi = initial_pi
@@ -251,7 +252,8 @@ def subgradient_ADS(
 
     history = []
 
-    while step_size > min_step_size:
+    iteration = 0
+    while step_size > min_step_size and (max_iterations is None or iteration < max_iterations):
         # solve Lagrangian subproblem
         dual_value, x = compute_dual_function(pi, mu)
 
@@ -287,6 +289,7 @@ def subgradient_ADS(
             "pi": np.copy(pi),
             "mu": np.copy(mu)
         })
+        iteration += 1
         
     return round(best_Dualvalue, 2), best_x, history
 

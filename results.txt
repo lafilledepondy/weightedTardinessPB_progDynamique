@@ -1,0 +1,134 @@
+
+P3-Weithed Tardiness Problem
+Instance : /autofs/unityaccount/cremi/gravendirane/Bureau/weightedTardinessPB_progDynamique/data_ocsc/wt040/wt040_001.dat
+Subgradient Basic: 360.0 Best x: [[0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ ...
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]]
+Time taken: 261.5131108760834
+____________________________________________________________
+Subgradient Polyak: 1568.43 Best x: [[0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ ...
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]]
+Time taken: 281.54993724823
+____________________________________________________________
+Subgradient ADS: 360.0 Best x: [[0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ ...
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]]
+Time taken: 259.71294045448303
+____________________________________________________________
+Cutting Planes: [0. 0. 0. ... 0. 0. 0.] Best x: 0.0
+Time taken: 11.110325336456299
+(venv) gravendirane@bataille:/autofs/unityaccount/cremi/gravendirane/Bureau/weightedTardinessPB_progDynamique$ 
+
+(venv) gravendirane@bataille:/autofs/unityaccount/cremi/gravendirane/Bureau/weightedTardinessPB_progDynamique$ 
+(venv) gravendirane@bataille:/autofs/unityaccount/cremi/gravendirane/Bureau/weightedTardinessPB_progDynamique$ python3 src/main.py 
+
+P3-Weithed Tardiness Problem
+Instance : /autofs/unityaccount/cremi/gravendirane/Bureau/weightedTardinessPB_progDynamique/data_ocsc/wt050/wt050_001.dat
+Subgradient Basic: 450.0 Best x: [[0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ ...
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]]
+Time taken: 566.5178594589233
+____________________________________________________________
+Subgradient Polyak: 2013.09 Best x: [[0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ ...
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]]
+Time taken: 641.2271337509155
+____________________________________________________________
+Subgradient ADS: 450.0 Best x: [[0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ ...
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]]
+Time taken: 656.5793614387512
+____________________________________________________________
+Cutting Planes: [0. 0. 0. ... 0. 0. 0.] Best x: 0.0
+Time taken: 24.329561233520508
+(venv) gravendirane@bataille:/autofs/unityaccount/cremi/gravendirane/Bureau/weightedTardinessPB_progDynamique$ python3 src/main.py 
+
+P3-Weithed Tardiness Problem
+Instance : /autofs/unityaccount/cremi/gravendirane/Bureau/weightedTardinessPB_progDynamique/data_ocsc/wt050/wt050_005.dat
+Subgradient Basic: 450.0 Best x: [[0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ ...
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]]
+Time taken: 558.345311164856
+____________________________________________________________
+  Subgradient Polyak: 1869.32 Best x: [[0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ ...
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]]
+Time taken: 535.3029041290283
+____________________________________________________________
+Subgradient ADS: 450.0 Best x: [[0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ ...
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]]
+Time taken: 520.9785203933716
+____________________________________________________________
+  Cutting Planes: [0. 0. 0. ... 0. 0. 0.] Best x: 0.0
+Time taken: 21.23588275909424
+(venv) gravendirane@bataille:/autofs/unityaccount/cremi/gravendirane/Bureau/weightedTardinessPB_progDynamique$ python3 src/main.py 
+
+P3-Weithed Tardiness Problem
+Instance : /autofs/unityaccount/cremi/gravendirane/Bureau/weightedTardinessPB_progDynamique/data_ocsc/wt040/wt040_005.dat
+Subgradient Basic: 360.0 Best x: [[0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ ...
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]]
+Time taken: 253.33787155151367
+____________________________________________________________
+Subgradient Polyak: 1159.55 Best x: [[0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ ...
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]]
+Time taken: 268.7348906993866
+____________________________________________________________
+  Subgradient ADS: 360.0 Best x: [[0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ ...
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]
+ [0. 0. 0. ... 0. 0. 0.]]
+Time taken: 249.60615634918213
+____________________________________________________________
+Cutting Planes: [0. 0. 0. ... 0. 0. 0.] Best x: 0.0
+Time taken: 10.720545768737793
