@@ -39,9 +39,9 @@ def project_solution(pi):
     return [max(x, 0) for x in pi]
 
 # Returns the new step size
-def update_step_size(step_size, gamma=0.8):
+def update_step_size(step_size, alpha=0.8):
     # choix arbitraire 0.8 ; should be decreasing and not too fast
-    return gamma * step_size
+    return alpha * step_size
 
 
 ##############################################
@@ -54,7 +54,7 @@ def subgradient_basic(
     problem_name: str,
     instance: SchedulingInstance | None = None,
     initial_step_size: float = 2.0,
-    gamma: float = 0.8,
+    alpha: float = 0.8,
     max_iterations: int | None = None,
 ):
     set_active_problem(problem_name, instance=instance)
@@ -89,7 +89,7 @@ def subgradient_basic(
         pi = project_solution(pi) # returns compherension list
 
         # update step
-        step_size = update_step_size(step_size, gamma)
+        step_size = update_step_size(step_size, alpha)
 
         # update the history
         history.append({
@@ -126,7 +126,7 @@ def subgradient_Polyak(
     problem_name: str,
     instance: SchedulingInstance | None = None,
     beta0: float = 1.0,
-    gamma: float = 0.8,
+    alpha: float = 0.8,
     initial_step_size: float = 2.0,
     max_iterations: int | None = None,
 ):
@@ -171,7 +171,7 @@ def subgradient_Polyak(
         step_size = update_polyak_step_size(beta_k, L_star, dual_value, d_k)
 
         # update beta_k (Polyak's rule)
-        beta_k = update_step_size(beta_k, gamma)
+        beta_k = update_step_size(beta_k, alpha)
         
         # update the history
         history.append({

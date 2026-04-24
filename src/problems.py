@@ -144,28 +144,26 @@ def p3_compute_objective_function(instance: SchedulingInstance, Ti, x):
     return obj
 
 
+def p3_compute_ineq_ctrs_functions(instance: SchedulingInstance, Ti, x):
+    ctr3 = np.zeros(instance.horizon + 1, dtype=float)
+    for t in range(instance.horizon + 1):                 
+        for i in range(instance.nb_jobs):        
+            for t_prime in Ti[i]:           
+                if t_prime <= t < t_prime + instance.processing_times[i]:
+                    ctr3[t] += x[i][t_prime]
+    ctr3 = ctr3 - 1
+    return ctr3
+
+
 def p3_compute_eq_ctrs_functions(instance: SchedulingInstance, Ti, x):
-    #return [sum (x[i][t] for t in Ti[i]) - 1 for i in range(instance.nb_jobs)]
     res=[]
     for i in range(instance.nb_jobs):
         res.append(np.sum(x[i,:]) - 1)
-    return np.array(res)
+    return np.array(res)                           
 
 
-def p3_compute_ineq_ctrs_functions(instance: SchedulingInstance, Ti, x):
-    load= np.zeros(instance.horizon+1)
-    for i in range(instance.nb_jobs):
-            p_i = instance.processing_times[i]
-            for t_prime in Ti[i]:
-                if x[i][t_prime] > 0:
-                    for s in range(t_prime, t_prime + p_i):
-                        if s <= instance.horizon:
-                            load[s] += x[i][t_prime]
-    return load - 1
-                           
-
-def p3_compute_dual_function(instance: SchedulingInstance, Ti, mu):
-    dual_val=0
+def p3_compute_dual_function(instance: SchedulingInstance, Ti, pi, mu):
+    # dual_val=0
     x_opt= np.zeros((instance.nb_jobs, instance.horizon+1))
 
     for i in range(instance.nb_jobs):
@@ -176,17 +174,17 @@ def p3_compute_dual_function(instance: SchedulingInstance, Ti, mu):
         for t in Ti[i]:
             cost=p3_cost(instance, i, t)
             sum_mu= np.sum(mu[t:t+p_i])
-            lagrange_cost= cost +sum_mu
+            lagrangien= (cost +sum_mu)* x_opt[i,t]
 
-            if lagrange_cost < min_cost:
-                min_cost=lagrange_cost
-                best_t=t
+            # if lagrange_cost < min_cost:
+            #     min_cost=lagrange_cost
+            #     best_t=t
         
-        x_opt[i,best_t]=1
-        dual_val += min_cost
+        # x_opt[i,best_t]=1
+        # dual_val += min_cost
     
-    dual_val -= np.sum(mu) 
-    return dual_val, x_opt
+    lagrangien -= np.sum(mu) 
+    return lagrangien, x_opt
             
 
 def p3_feasible_x_sol(instance: SchedulingInstance, Ti):
@@ -206,9 +204,8 @@ def p3_feasible_x_sol(instance: SchedulingInstance, Ti):
 #################################################################
 def p4_math_prog_dims(instance: SchedulingInstance):
     I= list(range(instance.nb_jobs))
-    T= list(range(instance.horizon+1))
-    Ti={ i: list(range(instance.horizon -instance.processing_times[i]+1)) for i in I }
-    return I*Ti, T, I #number of variables I*Ti, number of inequality ctrs T, number of equality ctrs I
+    Ti = {i: list(range(instance.horizon - instance.processing_times[i] + 1)) for i in I}
+    return sum(len(Ti[i]) for i in I), instance.horizon+1, instance.nb_jobs  # number of variables I*Ti, number of inequality ctrs T, number of equality ctrs I
 
 
 def p4_cost(instance: SchedulingInstance,i, t):
@@ -228,23 +225,31 @@ def p4_compute_objective_function(instance: SchedulingInstance, Ti, x):
 
     
 def p4_compute_eq_ctrs_functions(instance: SchedulingInstance, Ti, x):
-    return [sum (x[i][t] for t in Ti[i]) - 1 for i in range(instance.nb_jobs)]
+    ctr2 = [sum (x[i][t] for t in Ti[i]) - instance.nb_jobs for i in range(instance.nb_jobs)]
+    ctr3 = np.zeros(instance.horizon + 1, dtype=float)
+    for t in range(instance.horizon + 1):                 
+        for i in range(instance.nb_jobs):        
+            for t_prime in Ti[i]:           
+                if t_prime <= t < t_prime + instance.processing_times[i]:
+                    ctr3[t] += x[i][t_prime]
+    ctr3 = ctr3 - 1
+    return np.array([ctr2, ctr3])
 
 
 def p4_compute_ineq_ctrs_functions(instance: SchedulingInstance, Ti, x):
-    load= np.zeros(instance.horizon+1)
-    for i in range(instance.nb_jobs):
-            p_i = instance.processing_times[i]
-            for t_prime in Ti[i]:
-                if x[i][t_prime] > 0:
-                    for s in range(t_prime, t_prime + p_i):
-                        if s <= instance.horizon:
-                            load[s] += x[i][t_prime]
-    return load - 1
+    return np.array([])
                            
 
-def p4_compute_dual_function(instance: SchedulingInstance, Ti, mu):
-    pass
+def p4_compute_dual_function(instance: SchedulingInstance, Ti, pi, mu):
+    x_opt= np.zeros((instance.nb_jobs, instance.horizon+1))
+
+    for i in range(instance.nb_jobs):
+        for t in Ti[i]:
+            cost=p4_cost(instance, i, t)
+            lagrangien = (cost + mu[i]) * x_opt[i,t]
+    
+    lagrangien -= np.sum(mu) 
+    return lagrangien, x_opt
 
 
 def p4_feasible_x_sol(instance: SchedulingInstance, Ti):
@@ -358,7 +363,7 @@ def compute_dual_function(pi, mu):
     fn = get_active_problem()["compute_dual_function"]
     if ACTIVE_PROBLEM in ("P3", "P4"):
         instance, Ti = _require_active_context()
-        return fn(instance, Ti, pi)
+        return fn(instance, Ti, pi, mu)
     return fn(pi, mu)
 
 def feasible_x_sol():
