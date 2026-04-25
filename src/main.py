@@ -210,13 +210,15 @@ def main():
 
     # p3_allSG("data_ocsc/wt040/wt040_001.dat")
     # p3_allSG("data_ocsc/wt040/wt040_005.dat")
-    # p3_allSG("data_ocsc/wt040/wt050_001.dat")
-    # p3_allSG("data_ocsc/wt040/wt050_005.dat")
+    # p3_allSG("data_ocsc/wt040/wt040_025.dat")
+    # p3_allSG("data_ocsc/wt050/wt050_001.dat")
+    # p3_allSG("data_ocsc/wt050/wt050_005.dat")
 
     # p4_allSG("data_ocsc/wt040/wt040_001.dat")
     # p4_allSG("data_ocsc/wt040/wt040_005.dat")
-    # p4_allSG("data_ocsc/wt040/wt050_001.dat")
-    # p4_allSG("data_ocsc/wt040/wt050_005.dat")
+    # p4_allSG("data_ocsc/wt040/wt040_025.dat")
+    # p4_allSG("data_ocsc/wt050/wt050_001.dat")
+    # p4_allSG("data_ocsc/wt050/wt050_005.dat")
 
     # print("\nPROG. DYNAMIQUE")
     # demo_progDyn()  
