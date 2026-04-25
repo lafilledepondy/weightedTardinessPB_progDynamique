@@ -310,15 +310,18 @@ def initialize_master_program(nb_ineq_ctrs, nb_eq_ctrs, initial_x_sol):
     # t <= f(x1) + lambda^T g(x1)
     f_x1 = compute_objective_function(initial_x_sol)
     g_x1 = compute_ineq_ctrs_functions(initial_x_sol)
+    h_x1 = compute_eq_ctrs_functions(initial_x_sol)
 
     master_data = {
-        "nb_lambda": nb_ineq_ctrs,
+        "nb_lambda_ineq": nb_ineq_ctrs,
+        "nb_lambda_eq": nb_eq_ctrs,
         "cuts": []
     }
 
     master_data["cuts"].append({
         "f_val": f_x1,
-        "g_val": np.array(g_x1, dtype=float)
+        "g_val": np.array(g_x1, dtype=float),
+        "h_val": np.array(h_x1, dtype=float)
     })
 
     return master_data
@@ -328,7 +331,9 @@ def solve_master_program(master_data):
     """
     solving the master program (D^1_Epi) with the cuts generated so far
     """
-    m = master_data["nb_lambda"]
+    m_ineq = master_data["nb_lambda_ineq"]
+    m_eq = master_data["nb_lambda_eq"]
+    m = m_ineq + m_eq
     cuts = master_data["cuts"]
 
     # maximize t <=> minimize -t
@@ -341,14 +346,15 @@ def solve_master_program(master_data):
     for cut in cuts:
         row = np.zeros(m + 1)
 
-        # -g_i * lambda_i + t <= f(x^k)
-        row[:m] = -cut["g_val"]
+        # t <= f(x^k) + pi^T g(x^k) + mu^T h(x^k)
+        row[:m_ineq] = -cut["g_val"]
+        row[m_ineq:m] = -cut["h_val"]
         row[-1] = 1.0
 
         A_ub.append(row)
         b_ub.append(cut["f_val"])
 
-    bounds = [(0, None)] * m + [(None, None)]   # lambda >=0, t free
+    bounds = [(0, None)] * m_ineq + [(None, None)] * m_eq + [(None, None)]
 
     res = linprog(
         c=c,
@@ -361,10 +367,11 @@ def solve_master_program(master_data):
     if not res.success:
         raise RuntimeError("Master program not solved.")
 
-    lambda_r = np.array(res.x[:m])
+    pi_r = np.array(res.x[:m_ineq])
+    mu_r = np.array(res.x[m_ineq:m])
     t_r = res.x[-1]
 
-    return lambda_r, t_r
+    return pi_r, mu_r, t_r
 
 
 def cutting_planes(
@@ -372,12 +379,13 @@ def cutting_planes(
     problem_name: str,
     instance: SchedulingInstance | None = None,
     return_history: bool = False,
+    max_iterations: int | None = None,
 ):
     set_active_problem(problem_name, instance=instance)
     x1 = feasible_x_sol()
 
     nb_ineq_ctrs = len(compute_ineq_ctrs_functions(x1))
-    nb_eq_ctrs = 0
+    nb_eq_ctrs = len(compute_eq_ctrs_functions(x1))
 
     master_data = initialize_master_program(
         nb_ineq_ctrs,
@@ -389,24 +397,29 @@ def cutting_planes(
     UB = math.inf
     LB = -math.inf
 
-    best_lambda = np.zeros(nb_ineq_ctrs)
+    best_lambda = np.zeros(nb_ineq_ctrs + nb_eq_ctrs)
     history = []
+    iteration = 0
 
     # main loop Algorithm 3.4.1
-    while UB - LB > epsilon:
-        lambda_r, t_r = solve_master_program(master_data)
-        L_lambda_r, x_bar_r = compute_dual_function(lambda_r, np.array([])) # no mu in this problem
+    while UB - LB > epsilon and (max_iterations is None or iteration < max_iterations):
+        pi_r, mu_r, t_r = solve_master_program(master_data)
+        L_lambda_r, x_bar_r = compute_dual_function(pi_r, mu_r)
         UB = t_r
 
         if L_lambda_r > LB:
             LB = L_lambda_r
-            best_lambda = lambda_r.copy()
+            best_lambda = np.concatenate([pi_r, mu_r]).copy()
 
         if UB - LB > epsilon:
             new_cut = {
                 "f_val": compute_objective_function(x_bar_r),
                 "g_val": np.array(
                     compute_ineq_ctrs_functions(x_bar_r),
+                    dtype=float
+                ),
+                "h_val": np.array(
+                    compute_eq_ctrs_functions(x_bar_r),
                     dtype=float
                 )
             }
@@ -420,6 +433,7 @@ def cutting_planes(
             "upper_bound": float(UB),
             "gap": float(UB - LB),
         })
+        iteration += 1
 
     if return_history:
         return best_lambda, round(LB, 2), round(UB, 2), history

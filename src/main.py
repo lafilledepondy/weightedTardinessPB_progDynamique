@@ -73,24 +73,7 @@ def demo_p4():
     
     print(f"Opt réalisable (UB) : {obj_val}")
 
-
-def main():
-    print("")
-    # initial_pi = np.array([3.0, 1.0])
-    # initial_mu = np.array([])
-
-    # print("P1")
-    # print("Subgradient Basic:", subgradient_basic(initial_pi, initial_mu, 0.000001, problem_name="P1")[0])
-    # print("Subgradient Polyak:", subgradient_Polyak(initial_pi, initial_mu, 0.000001, problem_name="P1")[0])
-    # print("Subgradient ADS:", subgradient_ADS(initial_pi, initial_mu, 0.000001, problem_name="P1")[0])
-    # print("Cutting Planes:", cutting_planes(0.000001, problem_name="P1")[1])
-
-    # print("P2")
-    # print("Subgradient Basic:", subgradient_basic(initial_pi, initial_mu, 0.000001, problem_name="P2")[0])
-    # print("Subgradient Polyak:", subgradient_Polyak(initial_pi, initial_mu, 0.000001, problem_name="P2")[0])
-    # print("Subgradient ADS:", subgradient_ADS(initial_pi, initial_mu, 0.000001, problem_name="P2")[0])
-    # print("Cutting Planes:", cutting_planes(0.000001, problem_name="P2")[1])
-
+def p3_allSG():
     print("P3-Weithed Tardiness Problem")
     project_root = Path(__file__).resolve().parents[1]
     datafilePath = project_root / 'data_ocsc' / 'wt040' / 'wt040_005.dat'
@@ -122,13 +105,71 @@ def main():
     print("Time taken:", end - start)
     print("____________________________________________________________")
     start = time.time()
-    dual_value_p3_cutting, best_x_p3_cutting, _ = cutting_planes(0.000001, problem_name="P3", instance=instance)
-    print("Cutting Planes:", dual_value_p3_cutting, "Best x:", best_x_p3_cutting) # LB = DualValue
+    best_lambda_p3_cutting, dual_value_p3_cutting, ub_p3_cutting = cutting_planes(0.000001, problem_name="P3", instance=instance, max_iterations=100,)
+    print("Cutting Planes - LB:", dual_value_p3_cutting, "UB:", ub_p3_cutting, "Best lambda:", best_lambda_p3_cutting)
     end = time.time()
     print("Time taken:", end - start)
 
-    # demo_progDyn()  
+def p4_allSG():
+    print("P4-Weithed Tardiness Problem")
+    project_root = Path(__file__).resolve().parents[1]
+    datafilePath = project_root / 'data_ocsc' / 'wt040' / 'wt040_001.dat'
+    instance = SchedulingInstance.from_file(datafilePath)
 
+    print("Instance :", datafilePath)
+
+    initial_pi_p3 = np.ones(instance.horizon + 1, dtype=float)
+    initial_mu_p3 = np.ones(instance.nb_jobs, dtype=float)
+
+    I= list(range(instance.nb_jobs))
+    Ti = {i: list(range(instance.horizon - instance.processing_times[i] + 1)) for i in I}
+    # start = time.time()
+    # dual_value_p3, best_x, _ = subgradient_basic(initial_pi_p3, initial_mu_p3, 0.000001, problem_name="P3", instance=instance, max_iterations=100)
+    # end = time.time()
+    # print("Subgradient Basic:", dual_value_p3, "Best x:", best_x) # DualValue, Best x
+    # print("Time taken:", end - start)
+    # print("____________________________________________________________")
+    # start = time.time()
+    # dual_value_p3_polyak, best_x_polyak, _ = subgradient_Polyak(initial_pi_p3, initial_mu_p3, 0.000001, problem_name="P3", instance=instance, max_iterations=100)
+    # print("Subgradient Polyak:", dual_value_p3_polyak, "Best x:", best_x_polyak) # DualValue
+    # end = time.time()
+    # print("Time taken:", end - start)
+    # print("____________________________________________________________")
+    # start = time.time()
+    # dual_value_p3_ads, best_x_p3_ads, _ = subgradient_ADS(initial_pi_p3, initial_mu_p3, 0.000001, problem_name="P3", instance=instance, max_iterations=100)
+    # print("Subgradient ADS:", dual_value_p3_ads, "Best x:", best_x_p3_ads) # DualValue
+    # end = time.time()
+    # print("Time taken:", end - start)
+    # print("____________________________________________________________")
+    start = time.time()
+    best_lambda_p3_cutting, dual_value_p3_cutting, ub_p3_cutting = cutting_planes(0.000001, problem_name="P3", instance=instance, max_iterations=100,)
+    print("Cutting Planes - LB:", dual_value_p3_cutting, "UB:", ub_p3_cutting, "Best lambda:", best_lambda_p3_cutting)
+    end = time.time()
+    print("Time taken:", end - start)       
+
+def main():
+    print("")
+    # initial_pi = np.array([3.0, 1.0])
+    # initial_mu = np.array([])
+
+    # print("P1")
+    # print("Subgradient Basic:", subgradient_basic(initial_pi, initial_mu, 0.000001, problem_name="P1")[0])
+    # print("Subgradient Polyak:", subgradient_Polyak(initial_pi, initial_mu, 0.000001, problem_name="P1")[0])
+    # print("Subgradient ADS:", subgradient_ADS(initial_pi, initial_mu, 0.000001, problem_name="P1")[0])
+    # print("Cutting Planes:", cutting_planes(0.000001, problem_name="P1")[1])
+
+    # print("P2")
+    # print("Subgradient Basic:", subgradient_basic(initial_pi, initial_mu, 0.000001, problem_name="P2")[0])
+    # print("Subgradient Polyak:", subgradient_Polyak(initial_pi, initial_mu, 0.000001, problem_name="P2")[0])
+    # print("Subgradient ADS:", subgradient_ADS(initial_pi, initial_mu, 0.000001, problem_name="P2")[0])
+    # print("Cutting Planes:", cutting_planes(0.000001, problem_name="P2")[1])
+
+
+    # p3_allSG()
+
+    p4_allSG()
+
+    # demo_progDyn()  
     # demo_p3()  
     # demo_p4()
 
