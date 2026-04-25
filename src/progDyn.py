@@ -7,11 +7,13 @@ def relax1(nbItems, T, processingTimes, dueDates, penalties):
     choice_tab = [-1] * (T + 1)
     L_tab[T] = 0
 
+    # filling the table from T-1 to 0
     for t in range(T-1, -1, -1):
         for i in range(nbItems):
             t_current = t + processingTimes[i]
-
+            
             if t_current <= T:
+                # formule de reccurence 
                 cost = max(0, penalties[i] * (t_current - dueDates[i]))
                 value = cost + L_tab[t_current]
 
@@ -35,6 +37,9 @@ def relax1(nbItems, T, processingTimes, dueDates, penalties):
 
 
 def relax2(nbItems, T, processingTimes, dueDates, penalties):
+    """
+    meme code que relax1 mais on change la formule de recurrence
+    """
     INF = float('inf')
     L_tab = [[INF]*(nbItems+1) for _ in range(T+1)]
     choice_tab = [[-1]*(nbItems+1) for _ in range(T+1)]
@@ -48,6 +53,7 @@ def relax2(nbItems, T, processingTimes, dueDates, penalties):
                 p = processingTimes[i]
                 if t + p <= T and k + 1 <= nbItems:
                     completion = t + p
+                    # formule de reccurence !!!!!
                     cost = max(0, penalties[i]*(completion - dueDates[i]))
                     value = cost + L_tab[completion][k+1]
 

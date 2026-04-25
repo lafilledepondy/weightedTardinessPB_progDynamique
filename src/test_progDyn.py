@@ -3,7 +3,7 @@ from progDyn import relax1, relax2, optimalOrRealisableOrInfesable
 
 # ====== Relax. Lin. 1 
 def test_RL1_Toy_wt4_1_dat():
-    datafilePath = 'data/Toy_wt4.1.dat'
+    datafilePath = 'data_aone/Toy_wt4.1.dat'
     nbItems, T, processingTimes, dueDates, penalties = readData(datafilePath)
     L_tab, sequence = relax1(nbItems, T, processingTimes, dueDates, penalties)
     status = optimalOrRealisableOrInfesable(sequence, nbItems, T, processingTimes)
@@ -11,9 +11,10 @@ def test_RL1_Toy_wt4_1_dat():
     assert L_tab[0] == 67
     assert sequence == [0, 1, 3, 2]
     assert status == "Solution réalisable (donc optimale)"
+    print("test_RL1_Toy_wt4_1_dat passed")
 
 def test_RL1_Toy_wt4_2_dat():
-    datafilePath = 'data/Toy_wt4.2.dat'
+    datafilePath = 'data_aone/Toy_wt4.2.dat'
     nbItems, T, processingTimes, dueDates, penalties = readData(datafilePath)
     L_tab, sequence = relax1(nbItems, T, processingTimes, dueDates, penalties)
     status = optimalOrRealisableOrInfesable(sequence, nbItems, T, processingTimes)
@@ -23,7 +24,7 @@ def test_RL1_Toy_wt4_2_dat():
     assert status == "Solution NON réalisable (borne dual)"        
 
 def test_RL1_wt040_wt040_001_dat():
-    datafilePath = 'data/wt040/wt040_001.dat'
+    datafilePath = 'data_aone/wt040/wt040_001.dat'
     nbItems, T, processingTimes, dueDates, penalties = readData(datafilePath)
     L_tab, sequence = relax1(nbItems, T, processingTimes, dueDates, penalties)
     status = optimalOrRealisableOrInfesable(sequence, nbItems, T, processingTimes)
@@ -33,7 +34,7 @@ def test_RL1_wt040_wt040_001_dat():
     assert status == "Solution NON réalisable (borne dual)"      
     
 def test_RL1_wt040_wt040_002_dat():
-    datafilePath = 'data/wt040/wt040_002.dat'
+    datafilePath = 'data_aone/wt040/wt040_002.dat'
     nbItems, T, processingTimes, dueDates, penalties = readData(datafilePath)
     L_tab, sequence = relax1(nbItems, T, processingTimes, dueDates, penalties)
     status = optimalOrRealisableOrInfesable(sequence, nbItems, T, processingTimes)
@@ -44,7 +45,7 @@ def test_RL1_wt040_wt040_002_dat():
 
 # ====== Relax. Lin. 2
 def test_RL2_Toy_wt4_1_dat():
-    datafilePath = 'data/Toy_wt4.1.dat'
+    datafilePath = 'data_aone/Toy_wt4.1.dat'
     nbItems, T, processingTimes, dueDates, penalties = readData(datafilePath)
     L_tab, sequence = relax2(nbItems, T, processingTimes, dueDates, penalties)
     status = optimalOrRealisableOrInfesable(sequence, nbItems, T, processingTimes)
@@ -54,7 +55,7 @@ def test_RL2_Toy_wt4_1_dat():
     assert status == "Solution réalisable (donc optimale)"    
 
 def test_RL2_Toy_wt4_2_dat():
-    datafilePath = 'data/Toy_wt4.2.dat'
+    datafilePath = 'data_aone/Toy_wt4.2.dat'
     nbItems, T, processingTimes, dueDates, penalties = readData(datafilePath)
     L_tab, sequence = relax2(nbItems, T, processingTimes, dueDates, penalties)
     status = optimalOrRealisableOrInfesable(sequence, nbItems, T, processingTimes)
@@ -64,7 +65,7 @@ def test_RL2_Toy_wt4_2_dat():
     assert status == "Solution réalisable (donc optimale)"    
 
 def test_RL2_wt040_wt040_001_dat():
-    datafilePath = 'data/wt040/wt040_001.dat'
+    datafilePath = 'data_aone/wt040/wt040_001.dat'
     nbItems, T, processingTimes, dueDates, penalties = readData(datafilePath)
     L_tab, sequence = relax2(nbItems, T, processingTimes, dueDates, penalties)
     status = optimalOrRealisableOrInfesable(sequence, nbItems, T, processingTimes)
@@ -74,11 +75,27 @@ def test_RL2_wt040_wt040_001_dat():
     assert status == "Solution NON réalisable (borne dual)"      
     
 def test_RL2_wt040_wt040_002_dat():
-    datafilePath = 'data/wt040/wt040_002.dat'
+    datafilePath = 'data_aone/wt040/wt040_002.dat'
     nbItems, T, processingTimes, dueDates, penalties = readData(datafilePath)
     L_tab, sequence = relax2(nbItems, T, processingTimes, dueDates, penalties)
     status = optimalOrRealisableOrInfesable(sequence, nbItems, T, processingTimes)
 
     assert L_tab[0][0] == 545
     assert len(sequence) == 40
-    assert status == "Solution NON réalisable (borne dual)"      
+    assert status == "Solution NON réalisable (borne dual)"  
+
+
+def main():
+    test_RL1_Toy_wt4_1_dat()
+    test_RL1_Toy_wt4_2_dat()
+    test_RL1_wt040_wt040_001_dat()
+    test_RL1_wt040_wt040_002_dat()
+
+    test_RL2_Toy_wt4_1_dat()
+    test_RL2_Toy_wt4_2_dat()
+    test_RL2_wt040_wt040_001_dat()
+    test_RL2_wt040_wt040_002_dat()
+
+    print("All tests passed!")
+
+if __name__ == "__main__":    main()
